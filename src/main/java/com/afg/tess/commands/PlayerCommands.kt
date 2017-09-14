@@ -255,7 +255,7 @@ object PlayerCommands : CommandExecutor {
                                 PlayerData.Race.CONDUCTOR -> "No Organic Life Detected"
                                 PlayerData.Race.ADAPTOR -> "Very Little Organic Life Detected"
                             }
-                            scan += "\nRace: $raceName}"
+                            scan += "\nRace: $raceName"
                             scan += "\nPossible Attack Options: "
                             player2.moves.forEach {
                                 if (player2.moves.indexOf(it) <= 2) {

@@ -60,15 +60,8 @@ object TessUtils {
     }
 
     fun getRace(mentionTag: String): PlayerData.Race {
-        if (mentionTag.contains("161882538514579466"))
-            return PlayerData.Race.ADAPTOR
-        getRpMember(mentionTag)?.getRoles(getServer())?.forEach { r ->
-            try {
-                return PlayerData.Race.valueOf(r.name.toUpperCase())
-            } catch (e: Exception) {
-            }
-        }
-        return PlayerData.Race.HUMAN
+        val player = TessUtils.getPlayer(mentionTag)
+        return player?.race ?: PlayerData.Race.HUMAN
     }
 
     fun getServer(): Server? {
@@ -153,5 +146,13 @@ object TessUtils {
         if (Ero.spawnMonster(location, null, rank, add))
             getChannelFromName("announcements")?.sendMessage("ALERT: A rank $rank Ero has appeared in ${location.channel.name}.")
 
+    }
+
+    fun isAdmin(user: User) : Boolean{
+        return user.id.contains("150541854029381632") || user.id.contains("161882538514579466") || user.id.contains("332739616505462784")
+    }
+
+    fun isModerator(user: User) : Boolean {
+        return isAdmin(user) || user.id.contains("136936819060244480")
     }
 }

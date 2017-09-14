@@ -17,11 +17,6 @@ import kotlin.collections.HashMap
 object Factions {
 
     val factionList = ArrayList<Faction>()
-    init {
-        val default = Faction()
-        default.name = "factionless"
-        factionList.add(default)
-    }
 
     class Faction {
         var name = ""
@@ -110,6 +105,9 @@ object Factions {
     fun loadData() {
         val factionArray = ArrayList<String>()
         factionList.clear()
+        val default = Faction()
+        default.name = "factionless"
+        factionList.add(default)
         val dr = File(Tess.factionDataFolderPath)
         dr.mkdirs()
 

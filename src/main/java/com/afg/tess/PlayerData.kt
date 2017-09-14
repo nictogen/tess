@@ -108,6 +108,8 @@ object PlayerData {
 
         var canScan = 0
 
+        var race = Race.HUMAN
+
         fun loadData(data : HashMap<String, String>){
             if(data["money"] != null)           money = data["money"]!!.toDouble()
             if(data["playerID"] != null)        playerID =  data["playerID"]!!
@@ -123,6 +125,7 @@ object PlayerData {
             if(data["defense"] != null)         defense = Integer.parseInt(data["defense"])
             if(data["canScan"] != null)         canScan = Integer.parseInt(data["canScan"])
             if(data["location"] != null)        location = data["location"]!!
+            if(data["race"] != null)            race = Race.valueOf(data["race"]!!)
             items.clear()
             (0..backpackSize)
                     .filter { data["item$it"] != null }
@@ -151,6 +154,7 @@ object PlayerData {
             data.put("defense", defense.toString())
             data.put("canScan", canScan.toString())
             data.put("location", location)
+            data.put("race", race.name)
             var id = 0
             items.forEach { data.put("item${id++}", it.saveData()) }
             id = 0
@@ -181,6 +185,7 @@ object PlayerData {
             data.put("defense", defense.toString())
             data.put("canScan", canScan.toString())
             data.put("location", location)
+            data.put("race", race.name)
             var id = 0
             items.forEach { data.put("item${id++}", it.saveData()) }
             id = 0
