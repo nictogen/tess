@@ -105,7 +105,7 @@ class RandomExtremeSelfPowerUpMove(source : Move.Source, name: String) : Abstrac
     }
 
     override fun saveData(): String {
-        return "${getStorageName()}/${mainStat.name}/${type.name}/$source/$name/"
+        return "${getStorageName()}/$source/$name"
     }
 
     override fun getStorageName(): String {

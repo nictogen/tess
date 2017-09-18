@@ -26,7 +26,7 @@ class PvpCombat(location : Channel) : Combat(location) {
         val player = TessUtils.getPlayer(user.mentionTag)
         val otherPlayer = participants.any { it is CombatHandler.Player }
         if (player != null) {
-            val combatPlayer = CombatHandler.Player(name)
+            val combatPlayer = CombatHandler.Player(name, player)
             combatPlayer.speed = player.speed
             combatPlayer.accuracy = player.accuracy
             combatPlayer.defense = player.defense
@@ -42,8 +42,6 @@ class PvpCombat(location : Channel) : Combat(location) {
             combatPlayer.ogStrength = player.strength
             combatPlayer.ogIntelligence = player.intelligence
             combatPlayer.ogHealth = player.maxHealth.toDouble()*3.0
-
-            combatPlayer.id = user.mentionTag
 
             combatPlayer.faction = TessUtils.getFaction(player)
 

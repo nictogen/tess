@@ -6,7 +6,7 @@ import com.afg.tess.combat.combats.Combat
 /**
  * Created by AFlyingGrayson on 9/8/17
  */
-class SelfDestructMove(mainStat: MainStat, type: Type, source: Source, name: String) : Move(mainStat, type, source, name) {
+class SelfDestructMove(mainStat: MainStat, source: Source, name: String) : Move(mainStat, Type.RANGE, source, name) {
     override fun getBasePower(): Double { return 50.0 }
 
     override fun getStorageName(): String {
@@ -29,5 +29,9 @@ class SelfDestructMove(mainStat: MainStat, type: Type, source: Source, name: Str
             user.dead = true
         }
         super.calculateDamage(user, target, combat)
+    }
+
+    override fun saveData(): String {
+        return "${getStorageName()}/${mainStat.name}/$source/$name"
     }
 }

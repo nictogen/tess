@@ -18,4 +18,8 @@ class SwitchMove(source : Move.Source, name: String) : AbstractUtilityMove(MainS
         targets[0].area = formerArea
         combat.addLineToInfo("${user.name} switched places with ${targets[0]}.")
     }
+
+    override fun saveData(): String {
+        return "${getStorageName()}/$source/$name"
+    }
 }

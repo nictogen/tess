@@ -1,5 +1,7 @@
 package com.afg.tess
 
+import com.afg.tess.combat.CombatHandler
+import com.afg.tess.combat.moves.NothingMove
 import com.afg.tess.commands.AdminCommands
 import com.afg.tess.commands.PlayerCommands
 import de.btobastian.javacord.listener.message.MessageCreateListener
@@ -13,14 +15,12 @@ class Main {
 
     companion object {
 
-        var dayChanged = false
-        var ticks = 0
-
         @JvmStatic
         fun main() {
             Tess.api = PrivateTokens.getAPI()
             Tess.api.connectBlocking()
             Tess.api.registerListener(MessageCreateListener { _, message -> if (message.channelReceiver != null && message.content.contains("make") && message.content.contains("a player")) message.channelReceiver.server.members.forEach { if (message.content.contains(it.id)) PlayerData.createPlayer(it, message) } })
+            Tess.api.registerListener(AlcoholHandler)
             val cmdHandler = JavacordHandler(Tess.api)
             cmdHandler.registerCommand(AdminCommands)
             cmdHandler.registerCommand(PlayerCommands)
@@ -28,58 +28,30 @@ class Main {
             LocationHandler.loadLocations()
             Factions.loadData()
 
+
+            var lastSecond = 0
+            var lastMinute = 0
+
             while (true) {
                 val calendar = Calendar.getInstance()
-                val minutes = calendar.get(Calendar.MINUTE)
-                val hours = calendar.get(Calendar.HOUR_OF_DAY)
+                val hour = calendar.get(Calendar.HOUR_OF_DAY)
+                val minute = calendar.get(Calendar.MINUTE)
+                val second = calendar.get(Calendar.SECOND)
 
-                if (minutes == 0) {
-                    if (!dayChanged) {
-                        dayChanged = true
-                        if (hours % 2 == 0) {
+                if (second != lastSecond) {
 
-                            val weatherForecast = when (Tess.rand.nextInt(100)) {
-                                in 50..90 -> "It's very sunny."
-                                in 80..95 -> "It's raining."
-                                in 95..100 -> "It's snowing"
-                                else -> "The skies are clear."
-                            }
-                            TessUtils.getChannelFromName("announcements")?.sendMessage("A new day has begun. $weatherForecast")
-                        }
-                        if (hours % 6 == 0) {
-                            TessUtils.getServer()?.members?.forEach {
-                                it.getRoles(TessUtils.getServer()).forEach { role ->
-                                    val player = TessUtils.getPlayer(it.mentionTag)
-                                    if (player != null) {
-                                        when (role.name) {
-                                            "slave" -> player.money += 5
-                                            "low-income" -> player.money += 50
-                                            "medium-income" -> player.money += 100
-                                            "high-income" -> player.money += 250
-                                            "noble" -> player.money += 500
-                                        }
-                                        player.saveData()
-                                    }
+                    //Combat Timer
+                    CombatHandler.combatList.forEach {
+                        if (minute == it.nextRoundMinutes && second == it.nextRoundSeconds) {
+                            if (it.participants.any { it is CombatHandler.Player })
+                                it.participants.forEach { p ->
+                                    if (p.nextMove == null)
+                                        it.decideMove(NothingMove(), p, null)
                                 }
-                            }
-                            TessUtils.getChannelFromName("announcements")?.sendMessage("A new week has turned over, and everyone has gained their weekly income.")
+                            it.setRoundTimer()
                         }
                     }
-                } else if (minutes == 15) {
-                    if (!dayChanged) {
-                        dayChanged = true
-                        LocationHandler.locationList.forEach { it.combatCooldown = false }
-                        TessUtils.spawnEroAtBoundary()
-                    }
-                } else if (minutes == 45) {
-                    if (!dayChanged) {
-                        dayChanged = true
-                        LocationHandler.locationList.forEach { it.combatCooldown = false }
-                        TessUtils.spawnEroAtBoundary()
-                    }
-                } else dayChanged = false
 
-                if(ticks == 20) {
                     PlayerData.players.forEach {
                         val location = LocationHandler.getLocationFromName(it.location)
                         val channel = TessUtils.getLocation(it)
@@ -92,15 +64,49 @@ class Main {
                                     try {
                                         val channelTarget = location.nearbyLocations[0]
                                         LocationHandler.travelToLocationAnywhere(user, it, channelTarget.channel.name, null)
-                                    } catch (e: Exception) {
-                                    }
-
+                                    } catch (e: Exception) { }
                                 }
                             }
                         }
                     }
-                    ticks = 0
-                } else ticks++
+
+                    if (minute != lastMinute) {
+                        if(minute == 0) {
+                            if (hour % 2 == 0) {
+                                PlayerData.players.forEach {
+                                    it.drunkness = 0
+                                    it.saveData()
+                                }
+                                val weatherForecast = when (Tess.rand.nextInt(100)) {
+                                    in 50..90 -> "It's very sunny."
+                                    in 80..95 -> "It's raining."
+                                    in 95..100 -> "It's snowing"
+                                    else -> "The skies are clear."
+                                }
+                                TessUtils.getChannelFromName("absol-announcements")?.sendMessage("A new day has begun. $weatherForecast")
+                                TessUtils.getChannelFromName("cana-announcements")?.sendMessage("A new day has begun. $weatherForecast")
+                            }
+                            if (hour % 6 == 0) {
+                                TessUtils.getServer()?.members?.forEach {
+                                    val player = TessUtils.getPlayer(it.mentionTag)
+                                    if (player != null) {
+                                        player.money += player.income
+                                        player.saveData()
+                                    }
+                                }
+                                TessUtils.getChannelFromName("absol-announcements")?.sendMessage("A new week has turned over, and everyone has gained their weekly income.")
+                                TessUtils.getChannelFromName("cana-announcements")?.sendMessage("A new week has turned over, and everyone has gained their weekly income.")
+                            }
+                        }
+
+                        if (minute == 15 || minute == 45) {
+                            LocationHandler.locationList.forEach { it.combatCooldown = false }
+                            TessUtils.spawnEroAtBoundary()
+                        }
+                        lastMinute = minute
+                    }
+                    lastSecond = second
+                }
             }
         }
 

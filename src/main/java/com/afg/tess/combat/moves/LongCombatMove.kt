@@ -27,4 +27,8 @@ class LongCombatMove(source: Move.Source, name: String) : AbstractUtilityMove(Ma
         combat.addLineToInfo("${user.name} moved, now residing in area ${user.area}.")
     }
 
+    override fun saveData(): String {
+        return "${getStorageName()}/$source/$name"
+    }
+
 }

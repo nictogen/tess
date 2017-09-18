@@ -13,6 +13,10 @@ import com.afg.tess.combat.moves.Move
  * Created by AFlyingGrayson on 9/12/17
  */
 class Guard(name: String, rank: Int, startingArea: Int, faction: Factions.Faction) : CombatHandler.CombatParticipant(name) {
+    override fun getMoves(): List<Move> {
+        return arrayListOf(BasicDamageMove(Move.MainStat.POWER, Move.Type.RANGE, Move.Source.POWER, "Bullet Spray"), BasicDamageMove(Move.MainStat.STRENGTH, Move.Type.MELEE, Move.Source.PHYSICAL, "Pistol Whip"))
+    }
+
 
     companion object {
         fun spawnGuard(location: LocationHandler.Location, name: String, rank: Int, area: Int, faction: Factions.Faction) {

@@ -138,7 +138,7 @@ object Factions {
     class Guard(var location: LocationHandler.Location, var name: String, var rank: Int, var area: Int) {
 
         fun saveData(): String {
-            return "$location$$name$$rank$$area"
+            return "${location.channel.name}$$name$$rank$$area"
         }
     }
 

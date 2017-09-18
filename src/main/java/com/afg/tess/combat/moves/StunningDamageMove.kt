@@ -19,7 +19,7 @@ class StunningDamageMove(mainStat: MainStat, type: Type, source: Source, name: S
     override fun calculateDamage(user: CombatHandler.CombatParticipant, target: CombatHandler.CombatParticipant, combat: Combat) {
         super.calculateDamage(user, target, combat)
 
-        if (Tess.rand.nextInt(10) >= 3)
+        if (Tess.rand.nextInt(10) <= 3)
             if (!target.dead && target.nextMove != null) {
                 combat.addLineToInfo("${user.name} stunned ${target.name}, cancelling their move.")
                 target.nextMove = null

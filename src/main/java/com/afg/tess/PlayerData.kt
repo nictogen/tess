@@ -95,6 +95,7 @@ object PlayerData {
         var backpackSize = 10
         val items = ArrayList<ItemStack>()
         val moves = ArrayList<Move>()
+        val contacts = LinkedList<String>()
         var location = ""
 
         var maxHealth = 1
@@ -107,6 +108,12 @@ object PlayerData {
         var defense = 0
 
         var canScan = 0
+        var bartender = 0
+        var drunkness = 0
+
+        var income = 0
+
+        var arcleader = 0
 
         var race = Race.HUMAN
 
@@ -126,6 +133,12 @@ object PlayerData {
             if(data["canScan"] != null)         canScan = Integer.parseInt(data["canScan"])
             if(data["location"] != null)        location = data["location"]!!
             if(data["race"] != null)            race = Race.valueOf(data["race"]!!)
+            if(data["bartender"] != null)       bartender = Integer.parseInt(data["bartender"])
+            if(data["drunkness"] != null)       drunkness = Integer.parseInt(data["drunkness"])
+            if(data["arcleader"] != null)       arcleader = Integer.parseInt(data["arcleader"])
+            if(data["income"] != null)          income = Integer.parseInt(data["income"])
+            contacts.clear()
+            if(data["contacts"] != null){ data["contacts"]?.split("$")?.forEach { contacts.add(it) } }
             items.clear()
             (0..backpackSize)
                     .filter { data["item$it"] != null }
@@ -155,10 +168,19 @@ object PlayerData {
             data.put("canScan", canScan.toString())
             data.put("location", location)
             data.put("race", race.name)
+            data.put("bartender", bartender.toString())
+            data.put("drunkness", drunkness.toString())
+            data.put("arcleader", arcleader.toString())
+            data.put("income", income.toString())
             var id = 0
             items.forEach { data.put("item${id++}", it.saveData()) }
             id = 0
             moves.forEach { data.put("move${id++}", it.saveData()) }
+            var contactList = ""
+            contacts.forEach {
+                contactList += "$it$"
+            }
+            data.put("contacts", contactList)
             val dr = File(Tess.playerDataFolderPath)
             dr.mkdirs()
             val playerDataFile = File(dr, name)
@@ -186,6 +208,10 @@ object PlayerData {
             data.put("canScan", canScan.toString())
             data.put("location", location)
             data.put("race", race.name)
+            data.put("bartender", bartender.toString())
+            data.put("drunkness", drunkness.toString())
+            data.put("arcleader", arcleader.toString())
+            data.put("income", income.toString())
             var id = 0
             items.forEach { data.put("item${id++}", it.saveData()) }
             id = 0
@@ -223,6 +249,8 @@ object PlayerData {
         EX,
         EXY,
         CONDUCTOR,
-        ADAPTOR
+        ADAPTOR,
+        TATTOOEDHUMAN
     }
+
 }

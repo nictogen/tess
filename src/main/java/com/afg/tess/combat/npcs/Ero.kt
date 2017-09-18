@@ -14,6 +14,9 @@ import de.btobastian.javacord.entities.message.Message
  * Created by AFlyingGrayson on 9/8/17
  */
 class Ero(name: String, val rank: Int) : CombatHandler.CombatParticipant(name) {
+    override fun getMoves(): List<Move> {
+        return arrayListOf(BasicDamageMove(Move.MainStat.POWER, Move.Type.RANGE, Move.Source.POWER, "Energy Blast"), BasicDamageMove(Move.MainStat.STRENGTH, Move.Type.MELEE, Move.Source.PHYSICAL, "Bite"))
+    }
 
     companion object {
         fun spawnMonster(location: LocationHandler.Location, message: Message?, rank: Int, addToExisting: Boolean): Boolean {

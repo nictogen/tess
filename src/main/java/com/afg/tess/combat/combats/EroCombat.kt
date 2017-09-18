@@ -8,17 +8,15 @@ import de.btobastian.javacord.entities.Channel
 /**
  * Created by AFlyingGrayson on 9/13/17
  */
-class EroCombat(location: Channel) : Combat(location){
+class EroCombat(location: Channel) : Combat(location) {
 
     override fun fleeBehavior() {
         fleeingParticipants.forEach {
             participants.remove(it)
             if (it is CombatHandler.Player) {
-                val player = TessUtils.getPlayer(it.id)
-                if (player != null) {
-                    player.health = it.health/3.0
-                    if (player.health < 0.1) player.health = 0.1
-                }
+                val player = it.player
+                player.health = it.health / 3.0
+                if (player.health < 0.1) player.health = 0.1
             }
         }
     }
@@ -35,10 +33,7 @@ class EroCombat(location: Channel) : Combat(location){
             CombatHandler.combatList.remove(this)
             participants.forEach {
                 if (it is CombatHandler.Player && it.dead) {
-                    val player = TessUtils.getPlayer(it.id)
-                    if (player != null) {
-                        PlayerData.killPlayer(player)
-                    }
+                    PlayerData.killPlayer(it.player)
                 }
             }
         } else if (onlyMonsters) {
@@ -46,10 +41,7 @@ class EroCombat(location: Channel) : Combat(location){
             CombatHandler.combatList.remove(this)
             participants.forEach {
                 if (it is CombatHandler.Player && it.dead) {
-                    val player = TessUtils.getPlayer(it.id)
-                    if (player != null) {
-                        PlayerData.killPlayer(player)
-                    }
+                    PlayerData.killPlayer(it.player)
                 }
             }
 
@@ -78,39 +70,41 @@ class EroCombat(location: Channel) : Combat(location){
                     rewardLog += "\n#${it.killer!!.name} killed ${it.name}"
                     participants.forEach { p ->
                         if (p is CombatHandler.Player) {
-                            val killer = if(it.killer is CombatHandler.Player) TessUtils.getPlayer((it.killer as CombatHandler.Player).id) else null
-                            val player = TessUtils.getPlayer(p.id)
-                            val member = TessUtils.getRpMember(p.id)
-                            val name = if(member == null) player?.name else TessUtils.getName(member)
-                            if (killer != null && player != null && !p.dead) {
-                                val money = if (killer == player) it.rank * 15 + Tess.rand.nextInt(20) else it.rank * 10 + Tess.rand.nextInt(15)
-                                val conductor = TessUtils.getRace(player.playerID) == PlayerData.Race.CONDUCTOR || TessUtils.getRace(player.playerID) == PlayerData.Race.ADAPTOR
+                            val player = p.player
+                            val member = TessUtils.getRpMember(player.playerID)
+                            val name = if (member == null) player.name else TessUtils.getName(member)
+                            if (!p.dead) {
+                                val money = it.rank * 10 + Tess.rand.nextInt(15)
+                                val conductor = player.race == PlayerData.Race.CONDUCTOR || player.race == PlayerData.Race.ADAPTOR
                                 var eggDropped = if (conductor) Tess.rand.nextInt(100) <= 75 else Tess.rand.nextInt(100) <= 25
 
                                 rewardLog += "\n$name was able to scavenge $$money worth from its body."
                                 player.money += money
                                 var chance = if (conductor) 40 else 20
-                                for (i in 0..it.rank + 1) {
+                                var chances = it.rank
+                                while (chances > 9)
+                                    chances -= 9
+                                for (i in 0..chances) {
                                     if (eggDropped) {
                                         when {
                                             it.rank >= 30 -> {
-                                                rewardLog += if (!conductor) "\n  A conductor from the boundary sealed a dragon class eros seed for $name!."
-                                                else "\n  <$name> sealed a dragon class eros seed!."
+                                                rewardLog += if (!conductor) "\n  A conductor from the boundary sealed a dragon class eros seed for $name!"
+                                                else "\n  <$name> sealed a dragon class eros seed!"
                                                 ItemStack.addItemToPlayer(Item.DRAGON_EROS_SEED, player, 1)
                                             }
                                             it.rank >= 20 -> {
-                                                rewardLog += if (!conductor) "\n  A conductor from the boundary sealed a large eros seed for $name!."
-                                                else "\n  <$name> sealed a large eros seed!."
+                                                rewardLog += if (!conductor) "\n  A conductor from the boundary sealed a large eros seed for $name!"
+                                                else "\n  <$name> sealed a large eros seed!"
                                                 ItemStack.addItemToPlayer(Item.LARGE_EROS_SEED, player, 1)
                                             }
                                             it.rank >= 10 -> {
-                                                rewardLog += if (!conductor) "\n  A conductor from the boundary sealed a medium eros seed for $name!."
-                                                else "\n  <$name> sealed a medium eros seed!."
+                                                rewardLog += if (!conductor) "\n  A conductor from the boundary sealed a medium eros seed for $name!"
+                                                else "\n  <$name> sealed a medium eros seed!"
                                                 ItemStack.addItemToPlayer(Item.MEDIUM_EROS_SEED, player, 1)
                                             }
                                             else -> {
-                                                rewardLog += if (!conductor) "\n  A conductor from the boundary sealed a small eros seed for $name!."
-                                                else "\n  <$name> sealed a small eros seed!."
+                                                rewardLog += if (!conductor) "\n  A conductor from the boundary sealed a small eros seed for $name!"
+                                                else "\n  <$name> sealed a small eros seed!"
                                                 ItemStack.addItemToPlayer(Item.SMALL_EROS_SEED, player, 1)
                                             }
                                         }
@@ -124,11 +118,9 @@ class EroCombat(location: Channel) : Combat(location){
                         }
                     }
                 } else if (it is CombatHandler.Player) {
-                    val player = TessUtils.getPlayer(it.id)
-                    if (player != null) {
-                        player.health = it.health/3.0
-                        if (player.health < 0.1) player.health = 0.1
-                    }
+                    val player = it.player
+                    player.health = it.health / 3.0
+                    if (player.health < 0.1) player.health = 0.1
                 }
             }
             infoToPrint += rewardLog

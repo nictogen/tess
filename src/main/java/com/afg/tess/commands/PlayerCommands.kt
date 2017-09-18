@@ -19,16 +19,19 @@ object PlayerCommands : CommandExecutor {
     fun onGive(message: Message, args: Array<String>) {
         message.delete()
         val player = TessUtils.getPlayer(message.author.mentionTag)
+        val name = TessUtils.getName(message.author)
         if (player != null) {
             if (args.size == 2) {
                 val player2 = TessUtils.getPlayer(args[0])
-                if (player2 != null) {
+                val user2 = TessUtils.getRpMember(args[0])
+                if (player2 != null && user2 != null) {
+                    val name2 = TessUtils.getName(user2)
                     if (args[1][0] == '$') {
                         val i = Integer.parseInt(args[1].substring(1))
                         if (player.money >= i) {
                             player.money -= i
                             player2.money += i
-                            message.reply("You gave ${player2.name} $$i.")
+                            message.reply("$name gave $name2 $$i.")
                         } else message.reply("You don't have enough money for that")
                         return@onGive
                     } else {
@@ -39,12 +42,11 @@ object PlayerCommands : CommandExecutor {
                                 ItemStack.addItemToPlayer(it.itemType, player2, 1)
                                 if (it.amount <= 0)
                                     remove = it
-                                message.reply("You gave ${player2.name} 1 ${args[1].toLowerCase().capitalize()}.")
-                                return@forEach
+                                message.reply("$name gave $name2 1 ${args[1].toLowerCase().capitalize()}.")
+                                if (remove != null) player.items.remove(remove!!)
+                                return@onGive
                             }
                         }
-                        if (remove != null) player.items.remove(remove!!)
-                        return@onGive
                     }
                 } else message.reply("That person isn't a player.")
             }
@@ -72,17 +74,18 @@ object PlayerCommands : CommandExecutor {
             var string = "#$name Player Info:\n"
 
             string += "Stats:\n"
-            string += "\nStrength:       ${player.strength}"
-            string += "\nSpeed:          ${player.speed}"
-            string += "\nMax Health:     ${player.maxHealth}"
             string += "\nHealth:         ${player.health}"
+            string += "\nMax Health:     ${player.maxHealth}"
+            string += "\nStrength:       ${player.strength}"
             string += "\nIntelligence:   ${player.intelligence}"
             string += "\nPower:          ${player.power}"
+            string += "\nSpeed:          ${player.speed}"
             string += "\nAccuracy:       ${player.accuracy}"
             string += "\nDefense:        ${player.defense}"
 
             string += "\n\nMoney: $${player.money}"
             string += "\n\nFaction: ${TessUtils.getFaction(player).name}"
+            string += "\n\nDrunkenness: ${player.drunkness}"
 
             if (!player.items.isEmpty()) {
                 string += "\n\nItems:\n"
@@ -136,8 +139,9 @@ object PlayerCommands : CommandExecutor {
                         }
                         ItemType.STAT_BOOSTER -> {
                             try {
-                                val statTotal = player.strength + player.speed + player.maxHealth + player.intelligence + player.power + player.accuracy + player.defense
-                                val diminishingReturns = Math.ceil(statTotal.toDouble() / 150.0).toInt()
+                                var statTotal = player.strength + player.speed + player.maxHealth + player.intelligence + player.power + player.accuracy + player.defense - 100
+                                if(statTotal < 1) statTotal = 1
+                                val diminishingReturns = Math.ceil(statTotal.toDouble() / 50.0).toInt()
                                 when (PlayerData.Stat.valueOf(args[1].toUpperCase())) {
                                     PlayerData.Stat.STRENGTH -> player.strength += it.itemType.usefullness.toInt() / diminishingReturns
                                     PlayerData.Stat.SPEED -> player.speed += it.itemType.usefullness.toInt() / diminishingReturns
@@ -161,22 +165,86 @@ object PlayerCommands : CommandExecutor {
                             }
                         }
                         ItemType.GUARD -> {
-                            message.reply("Use that item with the !addguard command.")
+                            val location = LocationHandler.getLocationFromName(player.location)
+                            val faction = TessUtils.getFaction(player)
+                            if (location != null) {
+                                val claimingFaction = TessUtils.getClaimingFaction(location)
+                                if (claimingFaction == faction) {
+                                    try {
+                                        if (faction.controlledLocations[location]!!.size < 5) {
+                                            faction.controlledLocations[location]!!.add(Factions.Guard(location, args[1], it.itemType.usefullness.toInt(), Integer.parseInt(args[2])))
+                                            message.reply("Added a guard to ${location.channel.name}")
+                                            faction.saveData()
+                                            player.saveData()
+                                        }
+                                    } catch (e: Exception) {
+                                        return@onUse
+                                    }
+                                }
+                            }
                             return@forEach
+                        }
+                        ItemType.PHONE -> {
+                            if (args.size > 1)
+                                try {
+                                    val player2 = TessUtils.getPlayer(args[1])
+                                    if (player2 != null && !player.contacts.any { it == player2.playerID }) {
+                                        val name2 = TessUtils.getName(TessUtils.getRpMember(args[1])!!)
+                                        if (player2.items.any { it.itemType.type == ItemType.PHONE }) {
+                                            player.contacts.add(player2.playerID)
+                                            message.reply("Added $name2 as a contact!")
+                                        } else message.reply("$name2 doesn't have a phone!")
+                                    }
+                                } catch (e: Exception) {
+                                }
+                            else {
+                                var contacts = "```md\n"
+                                var id = 1
+                                player.contacts.forEach {
+                                    val name2 = TessUtils.getRpMember(it)?.let { it1 -> TessUtils.getName(it1) }
+                                    if (name2 != null) {
+                                        contacts += "${id++}: <$name2>\n"
+                                    }
+                                }
+                                message.reply("$contacts```")
+                            }
+                            player.saveData()
+                            return@onUse
+                        }
+                        ItemType.ALCOHOL -> {
+                            if(player.race != PlayerData.Race.CONDUCTOR && player.race != PlayerData.Race.ADAPTOR) {
+                                player.drunkness += it.itemType.usefullness.toInt()
+                                when(player.drunkness){
+                                    in 0..10 -> message.reply("$name is feeling a bit tipsy.")
+                                    in 10..20 -> message.reply("$name is properly buzzed.")
+                                    in 20..30 -> message.reply("$name is drunk.")
+                                    in 30..40 -> message.reply("$name is wasted.")
+                                    in 40..50 -> message.reply("$name should probably stop before they die.")
+                                    else ->{
+                                        PlayerData.killPlayer(player)
+                                        message.reply("$name died of alcohol poisoning. Sad.")
+                                    }
+                                }
+                            } else message.reply("$name doesn't feel any effects.")
+                        }
+                        ItemType.ERO_BAIT -> {
+                            val location = LocationHandler.getLocationFromName(player.location)
+                            if(location != null){
+                                location.erobait += it.itemType.usefullness.toInt()
+                            }
                         }
                     }
                     it.amount -= 1
                     if (it.amount <= 0)
                         remove = it
 
+                    if (remove != null)
+                        player.items.remove(remove!!)
+                    player.saveData()
                     message.reply("Used 1 ${it.itemType.name.toLowerCase().capitalize()}")
-                    return@forEach
+                    return@onUse
                 }
             }
-            if (remove != null)
-                player.items.remove(remove!!)
-            player.saveData()
-            return@onUse
         } else message.reply("You aren't a player.")
     }
 
@@ -192,7 +260,7 @@ object PlayerCommands : CommandExecutor {
                         if (args.isEmpty()) {
                             var string = "Market Selection:"
                             Item.values().forEach {
-                                if (it.marketCost != -1.0)
+                                if (it.shop == ShopType.MARKET && it.marketCost != -1.0)
                                     string += "\n${it.name.toLowerCase().capitalize()}, $${it.marketCost}"
                             }
                             message.reply(string)
@@ -201,7 +269,7 @@ object PlayerCommands : CommandExecutor {
                             if (args[0] == "buy") {
                                 if (args.size > 1) {
                                     Item.values().forEach {
-                                        if (it.marketCost != -1.0 && it.name.toLowerCase() == args[1].toLowerCase()) {
+                                        if (it.shop == ShopType.MARKET && it.marketCost != -1.0 && it.name.toLowerCase() == args[1].toLowerCase()) {
                                             val amount = if (args.size > 2) Integer.parseInt(args[2]) else 1
                                             if (player.money >= it.marketCost * amount) {
                                                 if (ItemStack.addItemToPlayer(it, player, amount)) {
@@ -254,6 +322,7 @@ object PlayerCommands : CommandExecutor {
                                 PlayerData.Race.EXY -> "Human, Possible Error"
                                 PlayerData.Race.CONDUCTOR -> "No Organic Life Detected"
                                 PlayerData.Race.ADAPTOR -> "Very Little Organic Life Detected"
+                                PlayerData.Race.TATTOOEDHUMAN -> "Mostly Human"
                             }
                             scan += "\nRace: $raceName"
                             scan += "\nPossible Attack Options: "
@@ -346,26 +415,6 @@ object PlayerCommands : CommandExecutor {
         } else message.reply("You aren't a player.")
     }
 
-    @Command(aliases = arrayOf("!detention"), description = "Transports a player to detention")
-    fun onDetention(message: Message, args: Array<String>) {
-        message.delete()
-        val player = TessUtils.getPlayer(message.author.mentionTag)
-        if (message.author.getRoles(TessUtils.getServer()).contains(TessUtils.getRole("Teacher"))) {
-            if (player != null) {
-                if (args.size == 1) {
-                    val player2 = TessUtils.getPlayer(args[0])
-                    val user = TessUtils.getRpMember(args[0])
-                    if (player2 != null) {
-                        if (player2.location == "detention")
-                            LocationHandler.travelToLocationAnywhere(user!!, player2, "sky-city-highschool", message)
-                        else
-                            LocationHandler.travelToLocationAnywhere(user!!, player2, "detention", message)
-                    } else message.reply("That person isn't a player.")
-                }
-            } else message.reply("You aren't a player.")
-        }
-    }
-
     @Command(aliases = arrayOf("!addmove", "!am"), description = "Adds a move to your player")
     fun onAddMove(message: Message, args: Array<String>) {
         val player = TessUtils.getPlayer(message.author.mentionTag)
@@ -373,23 +422,30 @@ object PlayerCommands : CommandExecutor {
             if (player.moves.size < 4) {
                 try {
                     var move: Move? = null
-                    val mainStat = Move.MainStat.valueOf(args[1].toUpperCase())
-                    val type = Move.Type.valueOf(args[2].toUpperCase())
-                    val source = Move.Source.valueOf(args[3].toUpperCase())
-                    val name = args[4]
                     when (args[0]) {
-                        "basicDamage" -> move = BasicDamageMove(mainStat, type, source, name)
-                        "selfPowerUp" -> move = SelfPowerUpMove(mainStat, source, name, args[5])
-                        "longCombatMove" -> move = LongCombatMove(source, name)
-                        "counter" -> move = CounterMove(mainStat, type, source, name)
-                        "selfDestruct" -> move = SelfDestructMove(mainStat, Move.Type.RANGE, source, name)
-                        "healOther" -> move = HealOtherMove(mainStat, source, name)
+                        "basicDamage" -> move = BasicDamageMove(Move.getMainStat(args[1]), Move.getType(args[2]), Move.getSource(args[3]), args[4])
+                        "selfPowerUp" -> move = SelfPowerUpMove(Move.getSource(args[1]), Move.getMainStat(args[2]), Move.getSecondaryStat(args[2]), args[3])
+                        "longCombatMove" -> move = LongCombatMove(Move.getSource(args[1]), args[2])
+                        "counter" -> move = CounterMove(Move.getMainStat(args[1]), Move.getType(args[2]), Move.getSource(args[3]), args[4])
+                        "selfDestruct" -> move = SelfDestructMove(Move.getMainStat(args[1]), Move.getSource(args[3]), args[4])
+                        "heal" -> move = HealOtherMove(Move.getMainStat(args[1]), Move.getSource(args[2]), args[3])
+                        "switch" -> move = SwitchMove(Move.getSource(args[1]), args[2])
+                        "stunningDamage" -> move = StunningDamageMove(Move.getMainStat(args[1]), Move.getType(args[2]), Move.getSource(args[3]), args[4])
+                        "absorb" -> move = AbsorbMove(Move.getMainStat(args[1]), Move.getType(args[2]), Move.getSource(args[3]), args[4])
+                        "accurateDamage" -> move = AccurateDamageMove(Move.getMainStat(args[1]), Move.getType(args[2]), Move.getSource(args[3]), args[4])
+                        "damageOverTime" -> move = DamageOverTimeMove(Move.getMainStat(args[1]), Move.getType(args[2]), Move.getSource(args[3]), args[4])
+                        "randomExtremeSelfPowerUp" -> move = RandomExtremeSelfPowerUpMove(Move.getSource(args[1]), args[2])
+                        "healOverTime" -> move = HealOverTimeMove(Move.getMainStat(args[1]), Move.getType(args[2]), Move.getSource(args[3]), args[4])
+                        "extremeSelfPowerUp" -> move = ExtremeSelfPowerUpMove(Move.getSource(args[1]), Move.getMainStat(args[2]), Move.getSecondaryStat(args[2]), Move.MainStat.valueOf(args[3].toUpperCase()), Move.SecondaryStat.valueOf(args[4].toUpperCase()), args[5])
+                        "debuff" -> move = DebuffMove(Move.getType(args[1]), Move.getSource(args[2]), Move.getMainStat(args[3]), Move.getSecondaryStat(args[3]), args[4])
+                        "powerSteal" -> move = PowerStealMove(Move.getAttackType(args[1]), Move.getSource(args[2]), Move.getMainStat(args[3]), Move.getSource(args[4]), args[5])
+                        "buffNearby" -> move = BuffNearbyMove(Move.getSource(args[1]), Move.getMainStat(args[2]), Move.getSecondaryStat(args[2]), args[3])
                     }
                     if (move != null) {
                         message.delete()
                         player.moves.add(move)
                         player.saveData()
-                        message.reply("Added $name to ${player.name}.")
+                        message.reply("Added ${move.name} to ${player.name}.")
                     }
                 } catch (e: Exception) {
                     message.reply("Incorrect arguments")
@@ -469,6 +525,13 @@ object PlayerCommands : CommandExecutor {
                         selectedMove = player.moves[index]
                 } catch (e: Exception) {
                 }
+            } else if(args[0].length == 2 && args[0][0] == 's'){
+                if(player.moves.any { it is PowerStealMove }){
+                    val stealMove = player.moves.filter { it is PowerStealMove }[0] as PowerStealMove
+                    try {
+                        selectedMove = stealMove.movesStolen[Integer.parseInt(args[0][1].toString()) - 1]
+                    } catch (e : Exception){}
+                }
             }
             if (selectedMove == null) {
                 player.moves.forEach { m ->
@@ -501,6 +564,19 @@ object PlayerCommands : CommandExecutor {
                                     }
                                     is LongCombatMove -> {
                                         move.target = Integer.parseInt(args[1])
+                                        combat.decideMove(move, participant, message)
+                                        return@onUseMove
+                                    }
+                                    is ExtremeSelfPowerUpMove -> {
+                                        combat.decideMove(move, participant, message)
+                                        return@onUseMove
+                                    }
+                                    is RandomExtremeSelfPowerUpMove -> {
+                                        combat.decideMove(move, participant, message)
+                                        return@onUseMove
+                                    }
+                                    is BuffNearbyMove -> {
+                                        move.targets.addAll(combat.participants.filter { it.area == participant.area })
                                         combat.decideMove(move, participant, message)
                                         return@onUseMove
                                     }
@@ -621,7 +697,7 @@ object PlayerCommands : CommandExecutor {
             if (combat != null && combat is PvpCombat) {
                 var remove: CombatHandler.CombatParticipant? = null
                 combat.participants.forEach {
-                    if (it is CombatHandler.Player && it.id == player.playerID)
+                    if (it is CombatHandler.Player && it.player == player)
                         remove = it
                 }
                 if (remove != null) {
@@ -668,7 +744,7 @@ object PlayerCommands : CommandExecutor {
                 val faction = Factions.factionList.filter { it.admins.contains(player) }[0]
                 if (admin) faction.admins.add(player2!!) else faction.grunts.add(player2!!)
                 faction.saveData()
-                message.reply("Added player to faction as an " + if(admin) faction.adminName else faction.gruntName)
+                message.reply("Added player to faction as an " + if (admin) faction.adminName else faction.gruntName)
             } catch (e: Exception) {
             }
         }
@@ -708,47 +784,6 @@ object PlayerCommands : CommandExecutor {
         }
     }
 
-    @Command(aliases = arrayOf("!addguard"), description = "Adds a guard to a location")
-    fun onAddGuard(message: Message, args: Array<String>) {
-        message.delete()
-        val player = TessUtils.getPlayer(message.author.mentionTag)
-        if (player != null) {
-            val location = LocationHandler.getLocationFromName(player.location)
-            val faction = TessUtils.getFaction(player)
-            if (location != null) {
-                val claimingFaction = TessUtils.getClaimingFaction(location)
-                if (claimingFaction == faction) {
-                    try {
-                        if (faction.controlledLocations[location]!!.size < 5) {
-                            var add = false
-                            var rank = 0
-                            var remove: ItemStack? = null
-                            player.items.forEach {
-                                if (it.itemType.type == ItemType.GUARD) {
-                                    add = true
-                                    rank = it.itemType.usefullness.toInt()
-                                    it.amount--
-                                    if (it.amount <= 0)
-                                        remove = it
-                                    return@forEach
-                                }
-                            }
-                            if (remove != null)
-                                player.items.remove(remove!!)
-                            if (add) {
-                                faction.controlledLocations[location]!!.add(Factions.Guard(location, args[0], rank, Integer.parseInt(args[1])))
-                                message.reply("Added a guard to ${location.channel.name}")
-                                faction.saveData()
-                                player.saveData()
-                            }
-                        }
-                    } catch (e: Exception) {
-                    }
-                }
-            }
-        }
-    }
-
     @Command(aliases = arrayOf("!attack", "!a"), description = "Attack a location")
     fun onAttack(message: Message, args: Array<String>) {
         message.delete()
@@ -771,7 +806,7 @@ object PlayerCommands : CommandExecutor {
             val location = LocationHandler.getLocationFromName(player.location)
             if (location != null) {
                 val claimingFaction = TessUtils.getClaimingFaction(location)
-                if(claimingFaction != null) {
+                if (claimingFaction != null) {
                     var string = "```\n${claimingFaction.name}"
                     string += "\nGuards:\n"
                     claimingFaction.controlledLocations[location]?.forEach {
@@ -782,4 +817,70 @@ object PlayerCommands : CommandExecutor {
             }
         }
     }
+
+    @Command(aliases = arrayOf("!text"), description = "Sends a text")
+    fun onText(message: Message, args: Array<String>) {
+        message.delete()
+        val player = TessUtils.getPlayer(message.author.mentionTag)
+        val name = TessUtils.getName(message.author)
+        if (player != null) {
+            if (player.items.any { it.itemType.type == ItemType.PHONE }) {
+                try {
+                    val contactNumber = Integer.parseInt(args[0]) - 1
+                    val player2 = TessUtils.getPlayer(player.contacts[contactNumber])
+                    val user2 = TessUtils.getRpMember(player.contacts[contactNumber])
+                    val name2 = TessUtils.getName(user2!!)
+                    if (player2!!.items.any { it.itemType.type == ItemType.PHONE }) {
+                        var messageContent = ""
+                        args.forEach { messageContent += "$it " }
+                        TessUtils.getLocation(player2)?.sendMessage("Text to $name2 from $name: $messageContent")
+                    } else message.reply("That player doesn't have a phone!")
+                } catch (e: Exception) {
+                }
+            } else message.reply("You don't have a phone!")
+        } else message.reply("You aren't a player.")
+    }
+
+    @Command(aliases = arrayOf("!order", "!o"), description = "Orders an item from a shopkeeper")
+    fun onOrder(message: Message, args: Array<String>) {
+        message.delete()
+        val player = TessUtils.getPlayer(message.author.mentionTag)
+        if (player != null) {
+            val location = LocationHandler.getLocationFromName(player.location)
+            if(location != null && location.bar){
+                if(args.isNotEmpty()) {
+                    val player2 = TessUtils.getPlayer(args[0])
+                    val user2 = TessUtils.getRpMember(args[0])
+                    if (player2 != null && user2 != null && player2.bartender == 1) {
+                        val name2 = TessUtils.getName(user2)
+                        Item.values().forEach {
+                            if (it.shop == ShopType.BAR && it.marketCost != -1.0 && it.name.toLowerCase() == args[1].toLowerCase()) {
+                                val amount = if (args.size > 2) Integer.parseInt(args[2]) else 1
+                                if (player.money >= it.marketCost * amount) {
+                                    if (ItemStack.addItemToPlayer(it, player, amount)) {
+                                        player.money -= it.marketCost * amount
+                                        player2.money += (it.marketCost * amount)/2
+                                        player.saveData()
+                                        message.reply("You bought $amount ${it.name.toLowerCase().capitalize()} from $name2")
+                                    } else message.reply("Your backpack is full.")
+                                    return@onOrder
+                                } else {
+                                    message.reply("You don't have enough money to buy $amount ${it.name} from $name2")
+                                    return@onOrder
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    var string = "Bar Selection:"
+                    Item.values().forEach {
+                        if (it.shop == ShopType.BAR && it.marketCost != -1.0)
+                            string += "\n${it.name.toLowerCase().capitalize()}, $${it.marketCost}"
+                    }
+                    message.reply(string)
+                }
+            }
+        }
+    }
+
 }

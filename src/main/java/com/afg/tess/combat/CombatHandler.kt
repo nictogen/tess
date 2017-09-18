@@ -1,6 +1,7 @@
 package com.afg.tess.combat
 
 import com.afg.tess.Factions
+import com.afg.tess.PlayerData
 import com.afg.tess.TessUtils
 import com.afg.tess.combat.combats.Combat
 import com.afg.tess.combat.moves.IOngoingMove
@@ -42,12 +43,16 @@ object CombatHandler {
         var dead = false
 
         var killer: CombatParticipant? = null
+
+        abstract fun getMoves() : List<Move>
     }
 
     class OngoingEffect(val user: CombatParticipant, var roundsLeft : Int, var move : IOngoingMove)
 
-    class Player(name: String) : CombatParticipant(name){
-        var id = ""
+    class Player(name: String, var player : PlayerData.Player) : CombatParticipant(name){
+        override fun getMoves(): List<Move> {
+            return player.moves
+        }
     }
 
     fun getCombatInfo(combat: Combat) : String {

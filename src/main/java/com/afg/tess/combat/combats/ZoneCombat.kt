@@ -2,7 +2,6 @@ package com.afg.tess.combat.combats
 
 import com.afg.tess.Factions
 import com.afg.tess.LocationHandler
-import com.afg.tess.TessUtils
 import com.afg.tess.combat.CombatHandler
 import de.btobastian.javacord.entities.Channel
 import java.util.*
@@ -31,7 +30,7 @@ class ZoneCombat(location: Channel, private var defendingFaction: Factions.Facti
 
             participants.filter { it.faction == defendingFaction }.forEach {
                 if (it is CombatHandler.Player) {
-                    val player = TessUtils.getPlayer(it.id)
+                    val player = it.player
                     if (player != null) {
                         player.health = it.health / 3.0
                         if (player.health < 0.1) player.health = 0.1
@@ -46,11 +45,9 @@ class ZoneCombat(location: Channel, private var defendingFaction: Factions.Facti
             addLineToInfo("The defenders have won, and ${attackingFaction.name} has been kicked out of the combat zone.")
             participants.filter { it.faction == attackingFaction }.forEach {
                 if (it is CombatHandler.Player) {
-                    val player = TessUtils.getPlayer(it.id)
-                    if (player != null) {
+                    val player = it.player
                         player.health = it.health / 3.0
                         if (player.health < 0.1) player.health = 0.1
-                    }
                 }
             }
             defendingFaction.saveData()
@@ -62,11 +59,9 @@ class ZoneCombat(location: Channel, private var defendingFaction: Factions.Facti
         fleeingParticipants.forEach {
             participants.remove(it)
             if (it is CombatHandler.Player) {
-                val player = TessUtils.getPlayer(it.id)
-                if (player != null) {
+                val player = it.player
                     player.health = it.health / 3.0
                     if (player.health < 0.1) player.health = 0.1
-                }
             }
         }
     }

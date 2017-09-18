@@ -1,5 +1,6 @@
 package com.afg.tess.combat.combats
 
+import com.afg.tess.AlcoholHandler
 import com.afg.tess.TessUtils
 import com.afg.tess.combat.CombatHandler
 import com.afg.tess.combat.moves.Move
@@ -18,9 +19,11 @@ abstract class Combat(var location: Channel) {
     val fleeingParticipants = ArrayList<CombatHandler.CombatParticipant>()
     var maxPlayers = 3
     var infoToPrint = "Combat Round: "
+    var nextRoundSeconds = 0
+    var nextRoundMinutes = 0
 
-    fun decideMove(move: Move, participant: CombatHandler.CombatParticipant, message: Message) {
-        message.delete()
+    fun decideMove(move: Move, participant: CombatHandler.CombatParticipant, message: Message?) {
+        message?.delete()
         if (!participant.dead)
             participant.nextMove = move
         else return
@@ -66,6 +69,8 @@ abstract class Combat(var location: Channel) {
         this.addLineToInfo(CombatHandler.getCombatInfo(this))
         participants.forEach { (it as? Ero)?.decideMove(this) }
         participants.forEach { (it as? Guard)?.decideMove(this) }
+
+        setRoundTimer()
     }
 
     fun addLineToInfo(line: String) {
@@ -76,7 +81,7 @@ abstract class Combat(var location: Channel) {
         val name = TessUtils.getName(user)
         val player = TessUtils.getPlayer(user.mentionTag)
         if (player != null) {
-            val combatPlayer = CombatHandler.Player(name)
+            val combatPlayer = CombatHandler.Player(name, player)
             combatPlayer.speed = player.speed
             combatPlayer.accuracy = player.accuracy
             combatPlayer.defense = player.defense
@@ -84,6 +89,8 @@ abstract class Combat(var location: Channel) {
             combatPlayer.strength = player.strength
             combatPlayer.intelligence = player.intelligence
             combatPlayer.health = player.health*3.0
+
+            AlcoholHandler.editStats(combatPlayer, player.drunkness)
 
             combatPlayer.ogSpeed = player.speed
             combatPlayer.ogAccuracy = player.accuracy
@@ -93,8 +100,6 @@ abstract class Combat(var location: Channel) {
             combatPlayer.ogIntelligence = player.intelligence
             combatPlayer.ogHealth = player.maxHealth.toDouble()*3.0
 
-            combatPlayer.id = user.mentionTag
-
             combatPlayer.faction = TessUtils.getFaction(player)
             participants.add(combatPlayer)
 
@@ -103,7 +108,17 @@ abstract class Combat(var location: Channel) {
                 (it as? Guard)?.decideMove(this)
             }
             CombatHandler.printCombatInfo(this)
+            setRoundTimer()
             return combatPlayer
         } else return null
+    }
+
+    fun setRoundTimer(){
+        val calendar = Calendar.getInstance()
+        val minutes = calendar.get(Calendar.MINUTE)
+        val seconds = calendar.get(Calendar.SECOND)
+
+        nextRoundMinutes = minutes + 1
+        nextRoundSeconds = seconds
     }
 }

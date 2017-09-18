@@ -7,4 +7,8 @@ abstract class AbstractUtilityMove(mainStat: MainStat, source: Source, name: Str
 
     override fun getBasePower(): Double { return 0.0 }
 
+    override fun saveData(): String {
+        return "${getStorageName()}/${mainStat.name}/$source/$name"
+    }
+
 }

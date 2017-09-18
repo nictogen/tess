@@ -105,7 +105,7 @@ object TessUtils {
     }
 
     fun getCombat(player: PlayerData.Player): Combat? {
-        CombatHandler.combatList.forEach { if (it.participants.any { it is CombatHandler.Player && it.id == player.playerID }) return it }
+        CombatHandler.combatList.forEach { if (it.participants.any { it is CombatHandler.Player && it.player == player }) return it }
         return null
     }
 
@@ -127,32 +127,32 @@ object TessUtils {
     }
 
     fun spawnEroAtBoundary() {
-        var location = LocationHandler.getLocationFromName("outside-the-boundary-area-3")
-        var rank = Tess.rand.nextInt(15) + 1
-        var combat = getCombat(location!!.channel)
-        var add = false
-        if (combat != null) {
-            location = LocationHandler.getLocationFromName("outside-the-boundary-area-2")
-            rank = Tess.rand.nextInt(10) + 1
-            combat = getCombat(location!!.channel)
-            if (combat != null) {
-                location = LocationHandler.getLocationFromName("outside-the-boundary-area-1")
-                rank = Tess.rand.nextInt(5) + 1
-                combat = getCombat(location!!.channel)
-                add = combat != null
+        LocationHandler.locationList.forEach {
+            if(it.channel.name.contains("boundary")){
+                val rank = Tess.rand.nextInt(5) + 1 + it.erobait
+                val combat = getCombat(it.channel)
+                if(combat == null){
+                    Ero.spawnMonster(it, null, rank, false)
+                    if(it.channel.name.contains("absol"))
+                        getChannelFromName("absol-announcements")?.sendMessage("ALERT: A rank $rank Ero has appeared in ${it.channel.name}.")
+                    else if(it.channel.name.contains("cana"))
+                        getChannelFromName("cana-announcements")?.sendMessage("ALERT: A rank $rank Ero has appeared in ${it.channel.name}.")
+                }
+                it.erobait = 0
             }
         }
-
-        if (Ero.spawnMonster(location, null, rank, add))
-            getChannelFromName("announcements")?.sendMessage("ALERT: A rank $rank Ero has appeared in ${location.channel.name}.")
-
     }
 
-    fun isAdmin(user: User) : Boolean{
+    fun isAdmin(user: User): Boolean {
         return user.id.contains("150541854029381632") || user.id.contains("161882538514579466") || user.id.contains("332739616505462784")
     }
 
-    fun isModerator(user: User) : Boolean {
+    fun isArcLeader(user: User) : Boolean
+    {
+        val player = TessUtils.getPlayer(user.mentionTag)
+        return player != null && player.arcleader == 1
+    }
+    fun isModerator(user: User): Boolean {
         return isAdmin(user) || user.id.contains("136936819060244480")
     }
 }

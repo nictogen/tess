@@ -17,31 +17,58 @@ abstract class Move(var mainStat: MainStat, var type: Type, var source: Source, 
             val args = string.split("/")
             var move: Move = BasicDamageMove(Move.MainStat.STRENGTH, Move.Type.MELEE, Source.PHYSICAL, "default")
             try {
-                val mainStat = Move.MainStat.valueOf(args[1].toUpperCase())
-                val type = Move.Type.valueOf(args[2].toUpperCase())
-                val source = Source.valueOf(args[3].toUpperCase())
-                val name = args[4]
                 when (args[0]) {
-                    "basicDamage" -> move = BasicDamageMove(mainStat, type, source, name)
-                    "selfPowerUp" -> move = SelfPowerUpMove(mainStat, source, name, args[5])
-                    "longCombatMove" -> move = LongCombatMove(source, name)
-                    "counter" -> move = CounterMove(mainStat, type, source, name)
-                    "selfDestruct" -> move = SelfDestructMove(mainStat, Move.Type.RANGE, source, name)
-                    "healOther" -> move = HealOtherMove(mainStat, source, name)
-                    "switch" -> move = SwitchMove(source, name)
-                    "stunningDamage" -> move = StunningDamageMove(mainStat, type, source, name)
-                    "absorb" -> move = AbsorbMove(mainStat, type, source, name)
-                    "accurateDamage" -> move = AccurateDamageMove(mainStat, type, source, name)
-                    "damageOverTime" -> move = DamageOverTimeMove(mainStat, type, source, name)
-                    "randomExtremeSelfPowerUp" -> move = RandomExtremeSelfPowerUpMove(source, name)
-                    "healOverTime" -> move = HealOverTimeMove(mainStat, type, source, name)
-                    "extremeSelfPowerUp" -> move = ExtremeSelfPowerUpMove(source, name, args[5], MainStat.valueOf(args[6].toUpperCase()), SecondaryStat.valueOf(args[7].toUpperCase()))
-                    "debuff" -> move = DebuffMove(type, source, name, args[5])
+                    "basicDamage" -> move = BasicDamageMove(getMainStat(args[1]), getAttackType(args[2]), getSource(args[3]), args[4])
+                    "selfPowerUp" -> move = SelfPowerUpMove(getSource(args[1]), getMainStat(args[2]), getSecondaryStat(args[3]), args[4])
+                    "longCombatMove" -> move = LongCombatMove(getSource(args[1]), args[2])
+                    "counter" -> move = CounterMove(getMainStat(args[1]), getType(args[2]), getSource(args[3]), args[4])
+                    "selfDestruct" -> move = SelfDestructMove(getMainStat(args[1]), getSource(args[3]), args[4])
+                    "heal" -> move = HealOtherMove(getMainStat(args[1]), getSource(args[2]), args[3])
+                    "switch" -> move = SwitchMove(getSource(args[1]), args[2])
+                    "stunningDamage" -> move = StunningDamageMove(getMainStat(args[1]), getAttackType(args[2]), getSource(args[3]), args[4])
+                    "absorb" -> move = AbsorbMove(getMainStat(args[1]), getAttackType(args[2]), getSource(args[3]), args[4])
+                    "accurateDamage" -> move = AccurateDamageMove(getMainStat(args[1]), getAttackType(args[2]), getSource(args[3]), args[4])
+                    "damageOverTime" -> move = DamageOverTimeMove(getMainStat(args[1]), getAttackType(args[2]), getSource(args[3]), args[4])
+                    "randomExtremeSelfPowerUp" -> move = RandomExtremeSelfPowerUpMove(getSource(args[1]), args[2])
+                    "healOverTime" -> move = HealOverTimeMove(getMainStat(args[1]), getAttackType(args[2]), getSource(args[3]), args[4])
+                    "extremeSelfPowerUp" -> move = ExtremeSelfPowerUpMove(getSource(args[1]), getMainStat(args[2]), getSecondaryStat(args[3]), MainStat.valueOf(args[4].toUpperCase()), SecondaryStat.valueOf(args[5].toUpperCase()), args[6])
+                    "debuff" -> move = DebuffMove(getAttackType(args[1]), getSource(args[2]), getMainStat(args[3]), getSecondaryStat(args[4]), args[4])
+                    "powerSteal" -> move = PowerStealMove(getAttackType(args[1]), getSource(args[2]), getMainStat(args[3]), getSource(args[4]), args[5])
+                    "buffNearby" -> move = BuffNearbyMove(getSource(args[1]), getMainStat(args[2]), getSecondaryStat(args[3]), args[4])
                 }
-            } catch (e: Exception) {
-            }
+            } catch (e: Exception) { }
 
             return move
+        }
+
+        fun getMainStat(string: String) : MainStat{
+            return when(string.toUpperCase()){
+                "POWER" -> Move.MainStat.valueOf(string.toUpperCase())
+                "STRENGTH" -> Move.MainStat.valueOf(string.toUpperCase())
+                "INTELLIGENCE" -> Move.MainStat.valueOf(string.toUpperCase())
+                else -> Move.MainStat.NONE
+            }
+        }
+
+        fun getSecondaryStat(string: String) : SecondaryStat {
+            return when(string.toUpperCase()){
+                "DEFENSE" -> SecondaryStat.DEFENSE
+                "ACCURACY" -> SecondaryStat.ACCURACY
+                "SPEED" -> SecondaryStat.SPEED
+                else -> SecondaryStat.NONE
+            }
+        }
+
+        fun getType(string: String) : Type {
+            return Type.valueOf(string.toUpperCase())
+        }
+
+        fun getAttackType(string: String) : Type {
+            return if(Type.valueOf(string.toUpperCase()) == Type.UTILITY) Type.MELEE else Type.valueOf(string.toUpperCase())
+        }
+
+        fun getSource(string: String) : Source {
+            return Source.valueOf(string.toUpperCase())
         }
     }
 
@@ -134,6 +161,7 @@ abstract class Move(var mainStat: MainStat, var type: Type, var source: Source, 
 
     abstract fun getStorageName(): String
 
+
     enum class MainStat {
         STRENGTH,
         INTELLIGENCE,
@@ -144,7 +172,8 @@ abstract class Move(var mainStat: MainStat, var type: Type, var source: Source, 
     enum class SecondaryStat {
         SPEED,
         ACCURACY,
-        DEFENSE
+        DEFENSE,
+        NONE
     }
 
     enum class Type {

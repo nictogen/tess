@@ -1,5 +1,6 @@
 package com.afg.tess
 
+import com.afg.tess.commands.AdminCommands
 import de.btobastian.javacord.entities.Channel
 import de.btobastian.javacord.entities.User
 import de.btobastian.javacord.entities.message.Message
@@ -35,6 +36,7 @@ object LocationHandler {
                     } catch (e : Exception){}
                 }
                 if(i.contains("#")) it.combatZone = true
+                if(i.contains("<")) it.bar = true
             }
         }
     }
@@ -142,15 +144,23 @@ object LocationHandler {
         } else message?.reply("That is not an available location")
     }
 
-    private fun lockAllOtherChannels(player: PlayerData.Player, user: User) {
+    fun lockAllOtherChannels(player: PlayerData.Player, user: User) {
         locationList.forEach {
             val permission = Tess.api.permissionsBuilder.setState(PermissionType.READ_MESSAGES, PermissionState.ALLOWED).setState(PermissionType.SEND_MESSAGES, PermissionState.ALLOWED).build()
-            val permission2 = Tess.api.permissionsBuilder.setState(PermissionType.READ_MESSAGES, PermissionState.DENIED).setState(PermissionType.SEND_MESSAGES, PermissionState.DENIED).build()
+            val permission2 = if(AdminCommands.admins.contains(player)) permission else Tess.api.permissionsBuilder.setState(PermissionType.READ_MESSAGES, PermissionState.DENIED).setState(PermissionType.SEND_MESSAGES, PermissionState.DENIED).build()
             if (it.channel.name != "general" && it != getLocationFromName(player.location)) {
                 it.channel.updateOverwrittenPermissions(user, permission2)
             } else {
                 it.channel.updateOverwrittenPermissions(user, permission)
             }
+        }
+        player.saveData()
+    }
+
+    fun unlockAllChannels(player: PlayerData.Player, user: User) {
+        locationList.forEach {
+            val permission = Tess.api.permissionsBuilder.setState(PermissionType.READ_MESSAGES, PermissionState.ALLOWED).setState(PermissionType.SEND_MESSAGES, PermissionState.ALLOWED).build()
+            it.channel.updateOverwrittenPermissions(user, permission)
         }
         player.saveData()
     }
@@ -170,7 +180,9 @@ object LocationHandler {
     class Location(val channel: Channel) {
         val nearbyLocations = ArrayList<Location>()
         var combatZone = false
+        var bar = false
         var combatCooldown = false
         var quickTravelCost = 0
+        var erobait = 0
     }
 }

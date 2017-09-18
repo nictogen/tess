@@ -16,6 +16,8 @@ import java.io.PrintWriter
  */
 object AdminCommands : CommandExecutor {
 
+    val admins = ArrayList<PlayerData.Player>()
+
     @Command(aliases = arrayOf("!rollstats", "!r"), description = "Roll a player's stats")
     fun onRollStats(message: Message, args: Array<String>) {
         message.delete()
@@ -78,7 +80,7 @@ object AdminCommands : CommandExecutor {
                             defense += rand.nextInt(10)
                             player.moves.add(BasicDamageMove(Move.MainStat.STRENGTH, Move.Type.MELEE, Move.Source.PHYSICAL, "Punch"))
                             player.moves.add(BasicDamageMove(Move.MainStat.POWER, Move.Type.RANGE, Move.Source.POWER, "Energy_Blast"))
-                            player.moves.add(SelfDestructMove(Move.MainStat.POWER, Move.Type.RANGE, Move.Source.POWER, "Self_Destruct"))
+                            player.moves.add(SelfDestructMove(Move.MainStat.POWER, Move.Source.POWER, "Self_Destruct"))
                             player.moves.add(LongCombatMove(Move.Source.POWER, "Fly"))
                         }
                         PlayerData.Race.EROEXY -> {
@@ -91,7 +93,7 @@ object AdminCommands : CommandExecutor {
                             defense += rand.nextInt(10) + 5
                             player.moves.add(BasicDamageMove(Move.MainStat.STRENGTH, Move.Type.MELEE, Move.Source.PHYSICAL, "Punch"))
                             player.moves.add(BasicDamageMove(Move.MainStat.POWER, Move.Type.RANGE, Move.Source.POWER, "Energy_Blast"))
-                            player.moves.add(SelfDestructMove(Move.MainStat.POWER, Move.Type.RANGE, Move.Source.POWER, "Self_Destruct"))
+                            player.moves.add(SelfDestructMove(Move.MainStat.POWER, Move.Source.POWER, "Self_Destruct"))
                             player.moves.add(LongCombatMove(Move.Source.POWER, "Fly"))
                         }
                         PlayerData.Race.CONDUCTOR -> {
@@ -104,7 +106,7 @@ object AdminCommands : CommandExecutor {
                             defense += rand.nextInt(5)
                             player.moves.add(BasicDamageMove(Move.MainStat.STRENGTH, Move.Type.MELEE, Move.Source.PHYSICAL, "Punch"))
                             player.moves.add(BasicDamageMove(Move.MainStat.INTELLIGENCE, Move.Type.RANGE, Move.Source.TECH, "Energy_Blast"))
-                            player.moves.add(SelfDestructMove(Move.MainStat.INTELLIGENCE, Move.Type.RANGE, Move.Source.TECH, "Self_Destruct"))
+                            player.moves.add(SelfDestructMove(Move.MainStat.INTELLIGENCE, Move.Source.TECH, "Self_Destruct"))
                         }
                         PlayerData.Race.HYBRIDEX -> {
                             strength += rand.nextInt(10) + 5
@@ -116,7 +118,7 @@ object AdminCommands : CommandExecutor {
                             defense += rand.nextInt(10) + 5
                             player.moves.add(BasicDamageMove(Move.MainStat.STRENGTH, Move.Type.MELEE, Move.Source.PHYSICAL, "Punch"))
                             player.moves.add(BasicDamageMove(Move.MainStat.POWER, Move.Type.RANGE, Move.Source.POWER, "Energy_Blast"))
-                            player.moves.add(SelfDestructMove(Move.MainStat.POWER, Move.Type.RANGE, Move.Source.POWER, "Self_Destruct"))
+                            player.moves.add(SelfDestructMove(Move.MainStat.POWER, Move.Source.POWER, "Self_Destruct"))
                             player.moves.add(LongCombatMove(Move.Source.POWER, "Fly"))
                         }
                         PlayerData.Race.EXY -> {
@@ -139,8 +141,18 @@ object AdminCommands : CommandExecutor {
                             defense += rand.nextInt(5) + 2
                             player.moves.add(BasicDamageMove(Move.MainStat.STRENGTH, Move.Type.MELEE, Move.Source.PHYSICAL, "Punch"))
                             player.moves.add(BasicDamageMove(Move.MainStat.INTELLIGENCE, Move.Type.RANGE, Move.Source.TECH, "Energy_Blast"))
-                            player.moves.add(SelfDestructMove(Move.MainStat.INTELLIGENCE, Move.Type.RANGE, Move.Source.TECH, "Self_Destruct"))
+                            player.moves.add(SelfDestructMove(Move.MainStat.INTELLIGENCE, Move.Source.TECH, "Self_Destruct"))
                             player.moves.add(HealOtherMove(Move.MainStat.INTELLIGENCE, Move.Source.TECH, "Healing_Nanites"))
+                        }
+                        PlayerData.Race.TATTOOEDHUMAN -> {
+                            strength += rand.nextInt(4)
+                            speed += rand.nextInt(4)
+                            health += rand.nextInt(4)
+                            intelligence += rand.nextInt(4)
+                            power += rand.nextInt(7) + 10
+                            accuracy += rand.nextInt(4)
+                            defense += rand.nextInt(4)
+                            player.moves.add(BasicDamageMove(Move.MainStat.STRENGTH, Move.Type.MELEE, Move.Source.PHYSICAL, "Punch"))
                         }
                     }
 
@@ -173,7 +185,7 @@ object AdminCommands : CommandExecutor {
     @Command(aliases = arrayOf("!spawnmonster", "!sm"), description = "Spawn a monster")
     fun onSpawnMonster(message: Message, args: Array<String>) {
         message.delete()
-        if (TessUtils.isAdmin(message.author)) {
+        if (TessUtils.isAdmin(message.author) || TessUtils.isArcLeader(message.author)) {
             val location = LocationHandler.getLocationFromName(args[0])
             if (location != null) {
                 try {
@@ -206,14 +218,18 @@ object AdminCommands : CommandExecutor {
     @Command(aliases = arrayOf("!adminmode", "!a"), description = "Toggles admin mode")
     fun onAdminMode(message: Message) {
         message.delete()
-        val roles = message.author.getRoles(TessUtils.getServer())
-
-        if (roles.contains(TessUtils.getRole("Perms"))) {
-            if (!roles.contains(TessUtils.getRole("Admin")))
-                TessUtils.getRole("Admin")?.addUser(message.author)
-            else TessUtils.getRole("Admin")?.removeUser(message.author)
+        val player = TessUtils.getPlayer(message.author.mentionTag)
+        if(TessUtils.isArcLeader(message.author) || TessUtils.isAdmin(message.author)) {
+            if (player != null) {
+                if (!admins.contains(player)) {
+                    admins.add(player)
+                    LocationHandler.unlockAllChannels(player, message.author)
+                } else {
+                    admins.remove(player)
+                    LocationHandler.lockAllOtherChannels(player, message.author)
+                }
+            }
         }
-
     }
 
     @Command(aliases = arrayOf("!tess"), description = "Talks with tess")
@@ -229,7 +245,7 @@ object AdminCommands : CommandExecutor {
     @Command(aliases = arrayOf("!reloadlocations", "!rl"), description = "Reloads locations")
     fun onReloadLocations(message: Message) {
         message.delete()
-        if (TessUtils.isAdmin(message.author)) {
+        if (TessUtils.isAdmin(message.author) || TessUtils.isArcLeader(message.author)) {
             LocationHandler.loadLocations()
             Factions.loadData()
             message.reply("Reloaded Locations")
@@ -276,9 +292,89 @@ object AdminCommands : CommandExecutor {
             val name = TessUtils.getName(TessUtils.getRpMember(args[0])!!)
             if (player != null) {
                 try {
-                    player.race = PlayerData.Race.valueOf(args[1])
+                    val newRace = PlayerData.Race.valueOf(args[1])
+                    if(player.race == PlayerData.Race.EROEX && newRace == PlayerData.Race.EROEXY){
+                        player.strength += 5
+                        player.power += 5
+                        player.accuracy += 5
+                        player.speed += 5
+                        player.maxHealth += 5
+                        player.health = player.maxHealth.toDouble()
+                        player.defense += 5
+                        message.reply("$name has evolved!")
+                    } else if (player.race == PlayerData.Race.EX && newRace == PlayerData.Race.EXY){
+                        player.power += 10
+                        player.accuracy += 5
+                        player.speed += 5
+                        message.reply("$name has evolved!")
+                    } else if (player.race == PlayerData.Race.HUMAN && newRace == PlayerData.Race.TATTOOEDHUMAN){
+                        player.maxHealth += 5 + Tess.rand.nextInt(3)
+                        player.health = player.maxHealth.toDouble()
+                        player.power += 8
+                        player.power += Tess.rand.nextInt(10)
+                        message.reply("$name has evolved!")
+                    }
+
+                    player.race = newRace
+                    player.saveData()
                     message.reply("$name's race is now ${player.race.name.toLowerCase().capitalize()}")
                 } catch (e: Exception) {
+                }
+            }
+        }
+
+    }
+
+    @Command(aliases = arrayOf("!bartender"), description = "Allows a scan")
+    fun onBartender(message: Message, args: Array<String>) {
+        message.delete()
+        if (TessUtils.isModerator(message.author)) {
+            if (args.size == 1) {
+                val player = TessUtils.getPlayer(args[0])
+                val name = TessUtils.getName(TessUtils.getRpMember(args[0])!!)
+                if (player != null) {
+                    player.bartender = 1
+                    player.saveData()
+                    message.reply("$name is now a bartender.")
+                }
+            }
+        }
+
+    }
+
+    @Command(aliases = arrayOf("!arcleader"), description = "Allows temporary arc powers")
+    fun onArcLeader(message: Message, args: Array<String>) {
+        message.delete()
+        if (TessUtils.isAdmin(message.author)) {
+            if (args.size == 1) {
+                val player = TessUtils.getPlayer(args[0])
+                val name = TessUtils.getName(TessUtils.getRpMember(args[0])!!)
+                if (player != null) {
+                    if(player.arcleader == 0) {
+                        player.arcleader = 1
+                        player.saveData()
+                        message.reply("$name is now the leader of an arc.")
+                    } else {
+                        player.arcleader = 0
+                        player.saveData()
+                        message.reply("$name is no longer the leader of an arc.")
+                    }
+                }
+            }
+        }
+    }
+
+    @Command(aliases = arrayOf("!income"), description = "Sets a player's income")
+    fun onIncome(message: Message, args: Array<String>) {
+        message.delete()
+        if (TessUtils.isAdmin(message.author)) {
+            if (args.size == 2) {
+                val player = TessUtils.getPlayer(args[0])
+                val name = TessUtils.getName(TessUtils.getRpMember(args[0])!!)
+                if (player != null) {
+                    player.income = Integer.parseInt(args[1])
+                    player.saveData()
+                    message.reply("Set $name's income.")
                 }
             }
         }
