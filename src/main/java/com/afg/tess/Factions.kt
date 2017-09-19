@@ -146,7 +146,7 @@ object Factions {
         val faction = TessUtils.getClaimingFaction(location)
         val guards = faction!!.controlledLocations[location]
         var combat = TessUtils.getCombat(location.channel)
-        val attackingUser = TessUtils.getRpMember(attacker.playerID)
+        val attackingUser = TessUtils.getMember(attacker)
         if(attackingUser != null) {
             if(TessUtils.getCombat(attacker) != null){
                 message.reply("You are already in a combat")
@@ -176,7 +176,7 @@ object Factions {
 
                 PlayerData.players.forEach {
                     if (it.location == location.channel.name && TessUtils.getFaction(it) == faction && TessUtils.getCombat(it) == null){
-                        val user = TessUtils.getRpMember(it.playerID)
+                        val user = TessUtils.getMember(it)
                         if(user != null && user.status == UserStatus.ONLINE)
                             combat!!.addPlayer(user)?.area = 0
                     }

@@ -71,8 +71,7 @@ class EroCombat(location: Channel) : Combat(location) {
                     participants.forEach { p ->
                         if (p is CombatHandler.Player) {
                             val player = p.player
-                            val member = TessUtils.getRpMember(player.playerID)
-                            val name = if (member == null) player.name else TessUtils.getName(member)
+                            val name = player.rpName
                             if (!p.dead) {
                                 val money = it.rank * 10 + Tess.rand.nextInt(15)
                                 val conductor = player.race == PlayerData.Race.CONDUCTOR || player.race == PlayerData.Race.ADAPTOR

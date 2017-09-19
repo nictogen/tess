@@ -37,6 +37,7 @@ object LocationHandler {
                 }
                 if(i.contains("#")) it.combatZone = true
                 if(i.contains("<")) it.bar = true
+                if(i.contains("!")) it.market = true
             }
         }
     }
@@ -184,5 +185,6 @@ object LocationHandler {
         var combatCooldown = false
         var quickTravelCost = 0
         var erobait = 0
+        var market = false
     }
 }

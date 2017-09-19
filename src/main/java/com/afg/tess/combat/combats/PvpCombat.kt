@@ -4,6 +4,7 @@ import com.afg.tess.TessUtils
 import com.afg.tess.combat.CombatHandler
 import com.afg.tess.combat.npcs.Ero
 import com.afg.tess.combat.npcs.Guard
+import com.afg.tess.rpName
 import de.btobastian.javacord.entities.Channel
 import de.btobastian.javacord.entities.User
 
@@ -22,7 +23,7 @@ class PvpCombat(location : Channel) : Combat(location) {
         }
     }
     override fun addPlayer(user: User) : CombatHandler.CombatParticipant? {
-        val name = TessUtils.getName(user)
+        val name = user.rpName
         val player = TessUtils.getPlayer(user.mentionTag)
         val otherPlayer = participants.any { it is CombatHandler.Player }
         if (player != null) {

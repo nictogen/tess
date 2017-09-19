@@ -7,7 +7,6 @@ import de.btobastian.javacord.entities.Channel
 import de.btobastian.javacord.entities.Server
 import de.btobastian.javacord.entities.User
 import de.btobastian.javacord.entities.message.Message
-import de.btobastian.javacord.entities.permissions.Role
 
 /**
  * Created by AFlyingGrayson on 9/3/17
@@ -44,11 +43,6 @@ object TessUtils {
         return letters.indexOf(letter.toUpperCase())
     }
 
-    fun getRpMember(mentionTag: String): User? {
-        val server = getServer()
-        server?.members?.forEach { member -> if (mentionTag.contains(member.mentionTag.substring(3))) return member }
-        return null
-    }
 
     fun getPlayer(mentionTag: String): PlayerData.Player? {
         PlayerData.players.forEach { player ->
@@ -59,18 +53,8 @@ object TessUtils {
         return null
     }
 
-    fun getRace(mentionTag: String): PlayerData.Race {
-        val player = TessUtils.getPlayer(mentionTag)
-        return player?.race ?: PlayerData.Race.HUMAN
-    }
-
-    fun getServer(): Server? {
+    fun getServer(): Server {
         return Tess.api.servers.elementAt(0)
-    }
-
-    fun getName(user: User): String {
-        val server = getServer()
-        return if (server?.getNickname(user) != null) server.getNickname(user) else user.name
     }
 
     fun getChannelFromName(name: String): Channel? {
@@ -87,14 +71,6 @@ object TessUtils {
         server?.channels?.forEach {
             if (it.name == player.location)
                 return it
-        }
-        return null
-    }
-
-    fun getRole(string: String): Role? {
-        val server = getServer()
-        server?.roles?.forEach {
-            if (it.name == string) return it
         }
         return null
     }
@@ -147,12 +123,26 @@ object TessUtils {
         return user.id.contains("150541854029381632") || user.id.contains("161882538514579466") || user.id.contains("332739616505462784")
     }
 
-    fun isArcLeader(user: User) : Boolean
-    {
+    fun isArcLeader(user: User) : Boolean {
         val player = TessUtils.getPlayer(user.mentionTag)
         return player != null && player.arcleader == 1
     }
+
     fun isModerator(user: User): Boolean {
         return isAdmin(user) || user.id.contains("136936819060244480")
     }
+
+    fun getMember(player : PlayerData.Player): User? {
+        getServer().members?.forEach { member -> if (player.playerID.contains(member.id)) return member }
+        return null
+    }
+
+
 }
+
+val User.rpName : String
+    get() = if (TessUtils.getServer().getNickname(this) != null) TessUtils.getServer().getNickname(this) else this.name
+
+
+val PlayerData.Player.rpName : String
+    get() = if(TessUtils.getMember(this) != null) TessUtils.getMember(this)!!.rpName else this.name

@@ -226,7 +226,6 @@ object PlayerData {
             printWriter.close()
         }
 
-
     }
 
     enum class Stat {

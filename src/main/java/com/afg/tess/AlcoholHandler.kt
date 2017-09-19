@@ -15,7 +15,6 @@ object AlcoholHandler : MessageCreateListener{
 
         if(player != null){
             val location = TessUtils.getLocation(player)
-            val name = TessUtils.getName(message.author)
             if(message.channelReceiver == location && message.content.isNotEmpty() && message.content[0] != '!' && message.content[0] != '['){
                 when(player.drunkness){
                     in 20..30 -> {
@@ -36,7 +35,7 @@ object AlcoholHandler : MessageCreateListener{
                                 messageContent += "$word "
                             }
                             message.delete()
-                            message.reply("$name tried to speak but it sounded like: $messageContent")
+                            message.reply("${message.author.rpName} tried to speak but it sounded like: $messageContent")
                         }
                     }
                     in 30..1000 -> {
@@ -56,7 +55,7 @@ object AlcoholHandler : MessageCreateListener{
                             messageContent += "$word "
                         }
                         message.delete()
-                        message.reply("$name tried to speak but it sounded like: $messageContent")
+                        message.reply("${message.author.rpName} tried to speak but it sounded like: $messageContent")
                     }
                 }
             }

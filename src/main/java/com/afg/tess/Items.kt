@@ -33,6 +33,21 @@ class ItemStack(val itemType: Item) {
             player.saveData()
             return true
         }
+
+        fun removeItemFromPlayer(itemType: Item, player: PlayerData.Player): Boolean {
+            var removed = false
+            player.items.forEach {
+                if (it.itemType == itemType) {
+                    it.amount -= 1
+                    removed = true
+                    return@forEach
+                }
+            }
+            val toRemove = player.items.filter { it.amount <= 0 }
+            player.items.removeAll(toRemove)
+            player.saveData()
+            return removed
+        }
     }
 
     constructor(dataTag: String) : this(getItemTypeFromDataTag(dataTag)) {

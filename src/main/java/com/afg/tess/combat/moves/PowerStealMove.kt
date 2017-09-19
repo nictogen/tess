@@ -37,7 +37,7 @@ class PowerStealMove(type : Move.Type, source: Source, val mainStatToSteal : Mai
                     }
                     string += "\n<${it.name}> Move Type: ${it.getStorageName()}, Main Stat: ${it.mainStat.name.toLowerCase().capitalize()}, TargetType: ${it.type.name.toLowerCase().capitalize()}, Source: ${it.source.name.toLowerCase().capitalize()} $extraData"
                 }
-                TessUtils.getRpMember(user.player.playerID)?.sendMessage("```md\n$string```")
+                TessUtils.getMember(user.player)?.sendMessage("```md\n$string```")
             }
             combat.addLineToInfo("${target.name} stole ${target.name}'s ${mainStatToSteal.name.toLowerCase()} and their ${sourceToSteal.name.toLowerCase()} moves.\n" +
                     "Their power is now ${user.power} and they stole ${movesStolen.size} moves.")

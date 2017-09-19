@@ -6,6 +6,7 @@ import com.afg.tess.combat.CombatHandler
 import com.afg.tess.combat.moves.Move
 import com.afg.tess.combat.npcs.Ero
 import com.afg.tess.combat.npcs.Guard
+import com.afg.tess.rpName
 import de.btobastian.javacord.entities.Channel
 import de.btobastian.javacord.entities.User
 import de.btobastian.javacord.entities.message.Message
@@ -22,8 +23,7 @@ abstract class Combat(var location: Channel) {
     var nextRoundSeconds = 0
     var nextRoundMinutes = 0
 
-    fun decideMove(move: Move, participant: CombatHandler.CombatParticipant, message: Message?) {
-        message?.delete()
+    fun decideMove(move: Move, participant: CombatHandler.CombatParticipant) {
         if (!participant.dead)
             participant.nextMove = move
         else return
@@ -78,7 +78,7 @@ abstract class Combat(var location: Channel) {
     }
 
     open fun addPlayer(user: User) : CombatHandler.CombatParticipant? {
-        val name = TessUtils.getName(user)
+        val name = user.rpName
         val player = TessUtils.getPlayer(user.mentionTag)
         if (player != null) {
             val combatPlayer = CombatHandler.Player(name, player)

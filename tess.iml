@@ -43,13 +43,10 @@
     <orderEntry type="library" name="Maven: org.apache.httpcomponents:httpmime:4.5.2" level="project" />
     <orderEntry type="library" name="Maven: com.neovisionaries:nv-websocket-client:1.31" level="project" />
     <orderEntry type="library" name="Maven: org.slf4j:slf4j-api:1.7.22" level="project" />
-    <orderEntry type="library" name="Maven: de.btobastian.sdcf4j:sdcf4j-core:1.0.5" level="project" />
-    <orderEntry type="library" name="Maven: de.btobastian.sdcf4j:sdcf4j-javacord:1.0.5" level="project" />
-    <orderEntry type="library" name="Maven: de.btobastian.javacord:javacord:2.0.14" level="project" />
     <orderEntry type="library" name="Maven: org.jetbrains.kotlin:kotlin-stdlib-jre8:1.1.4-3" level="project" />
     <orderEntry type="library" name="Maven: org.jetbrains.kotlin:kotlin-stdlib:1.1.4-3" level="project" />
     <orderEntry type="library" name="Maven: org.jetbrains:annotations:13.0" level="project" />
     <orderEntry type="library" name="Maven: org.jetbrains.kotlin:kotlin-stdlib-jre7:1.1.4-3" level="project" />
-    <orderEntry type="library" scope="TEST" name="Maven: org.jetbrains.kotlin:kotlin-test:1.1.4-3" level="project" />
+    <orderEntry type="library" name="Maven: org.jetbrains.kotlin:kotlin-reflect:1.1.4-3" level="project" />
   </component>
 </module>

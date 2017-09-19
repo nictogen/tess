@@ -4,8 +4,8 @@ import com.afg.tess.combat.CombatHandler
 import com.afg.tess.combat.moves.NothingMove
 import com.afg.tess.commands.AdminCommands
 import com.afg.tess.commands.PlayerCommands
+import com.afg.tess.commands.api.CommandHandler
 import de.btobastian.javacord.listener.message.MessageCreateListener
-import de.btobastian.sdcf4j.handler.JavacordHandler
 import java.util.*
 
 /**
@@ -21,9 +21,9 @@ class Main {
             Tess.api.connectBlocking()
             Tess.api.registerListener(MessageCreateListener { _, message -> if (message.channelReceiver != null && message.content.contains("make") && message.content.contains("a player")) message.channelReceiver.server.members.forEach { if (message.content.contains(it.id)) PlayerData.createPlayer(it, message) } })
             Tess.api.registerListener(AlcoholHandler)
-            val cmdHandler = JavacordHandler(Tess.api)
-            cmdHandler.registerCommand(AdminCommands)
-            cmdHandler.registerCommand(PlayerCommands)
+            Tess.api.registerListener(CommandHandler)
+            CommandHandler.loadCommands(AdminCommands)
+            CommandHandler.loadCommands(PlayerCommands)
             PlayerData.loadData()
             LocationHandler.loadLocations()
             Factions.loadData()
@@ -46,16 +46,17 @@ class Main {
                             if (it.participants.any { it is CombatHandler.Player })
                                 it.participants.forEach { p ->
                                     if (p.nextMove == null)
-                                        it.decideMove(NothingMove(), p, null)
+                                        it.decideMove(NothingMove(), p)
                                 }
                             it.setRoundTimer()
                         }
                     }
 
+                    //Kick out of controlled combat zones
                     PlayerData.players.forEach {
                         val location = LocationHandler.getLocationFromName(it.location)
                         val channel = TessUtils.getLocation(it)
-                        val user = TessUtils.getRpMember(it.playerID)
+                        val user = TessUtils.getMember(it)
                         if (location != null && channel != null && user != null) {
                             if (TessUtils.getCombat(channel) == null || TessUtils.getCombat(it) == null) {
                                 val channelFaction = TessUtils.getClaimingFaction(location)
@@ -70,6 +71,7 @@ class Main {
                         }
                     }
 
+                    //Time mechanics
                     if (minute != lastMinute) {
                         if(minute == 0) {
                             if (hour % 2 == 0) {
@@ -87,7 +89,7 @@ class Main {
                                 TessUtils.getChannelFromName("cana-announcements")?.sendMessage("A new day has begun. $weatherForecast")
                             }
                             if (hour % 6 == 0) {
-                                TessUtils.getServer()?.members?.forEach {
+                                TessUtils.getServer().members?.forEach {
                                     val player = TessUtils.getPlayer(it.mentionTag)
                                     if (player != null) {
                                         player.money += player.income
