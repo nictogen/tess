@@ -14,6 +14,7 @@ import kotlin.reflect.KFunction
 import kotlin.reflect.KParameter
 import kotlin.reflect.full.declaredFunctions
 import kotlin.reflect.full.starProjectedType
+import kotlin.reflect.full.withNullability
 
 /**
  * Created by AFlyingGrayson on 9/18/17
@@ -68,6 +69,12 @@ object CommandHandler : MessageCreateListener, MessageEditListener {
                     Int::class.starProjectedType -> argObjects.put(par, Integer.parseInt(args[par.index - 2]))
                     Item::class.starProjectedType -> argObjects.put(par,Item.valueOf(args[par.index - 2].toUpperCase()))
                     Boolean::class.starProjectedType -> if (args[par.index - 2] == "true") argObjects.put(par, true) else if (args[par.index - 2] == "false") argObjects.put(par, false) else null!!
+                    String::class.starProjectedType.withNullability(true) -> argObjects.put(par, args[par.index - 2])
+                    PlayerData.Player::class.starProjectedType.withNullability(true) -> argObjects.put(par, TessUtils.getPlayer(args[par.index - 2])!!)
+                    Int::class.starProjectedType.withNullability(true) -> argObjects.put(par, Integer.parseInt(args[par.index - 2]))
+                    Item::class.starProjectedType.withNullability(true) -> argObjects.put(par,Item.valueOf(args[par.index - 2].toUpperCase()))
+                    Boolean::class.starProjectedType.withNullability(true) -> if (args[par.index - 2] == "true") argObjects.put(par, true) else if (args[par.index - 2] == "false") argObjects.put(par, false) else null!!
+
                 }
             }
             if(function.returnType == String::class.starProjectedType) {
