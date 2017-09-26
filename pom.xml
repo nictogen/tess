@@ -56,7 +56,7 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>com.afg.tess.Tess</mainClass>
+                            <mainClass>com.afg.tess.init.Tess</mainClass>
                         </manifest>
                     </archive>
                 </configuration>

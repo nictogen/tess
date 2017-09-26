@@ -1,4 +1,6 @@
 .idea/
 src/test/
 target/
-/src/main/java/com/afg/tess/PrivateTokens.kt
+out/
+/src/main/java/com/afg/tess/init/PrivateTokens.kt
+.DS_Store
