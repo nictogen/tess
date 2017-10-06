@@ -34,29 +34,35 @@ object CommandHandler : MessageCreateListener, MessageEditListener {
     class CommandHolder(val obj: Any, val func: KFunction<*>)
 
     override fun onMessageCreate(p0: DiscordAPI?, p1: Message) {
-        readCommand(p1, p1.content)
+        val player = TessUtils.getPlayer(p1.author.id)
+        readCommand(p1, p1.content, player)
     }
 
     override fun onMessageEdit(p0: DiscordAPI?, p1: Message, p2: String) {
-        readCommand(p1, p2)
+        val player = TessUtils.getPlayer(p1.author.id)
+        readCommand(p1, p1.content, player)
     }
 
-    private fun readCommand(message: Message, content: String) {
+    fun readCommand(message: Message, content: String, player: PlayerHandler.Player) {
         val args = content.split(" ")
         if (args.isNotEmpty()) {
             commands.forEach C@ { a, c ->
                 a.forEach { alias ->
-                    if (alias == args[0]) doCommand(c.obj, c.func, if (args.size > 1) args.subList(1, args.size) else emptyList(), message)
+                    if (alias == args[0]){
+                        try {
+                            doCommand(c.obj, c.func, if (args.size > 1) args.subList(1, args.size) else emptyList(), player, message)
+                        } catch (e : Exception){}
+
+                    }
                 }
             }
         }
     }
 
-    private fun doCommand(obj: Any, function: KFunction<*>, args: List<String>, message: Message) {
+    private fun doCommand(obj: Any, function: KFunction<*>, args: List<String>, player: PlayerHandler.Player, message: Message) {
         val argObjects = LinkedHashMap<KParameter, Any>()
         try {
             argObjects.put(function.parameters[0], obj)
-            val player = TessUtils.getPlayer(message.author.id)
             val member = TessUtils.getMember(player)
             argObjects.put(function.parameters[1], MessageInfo(message, player, member))
 

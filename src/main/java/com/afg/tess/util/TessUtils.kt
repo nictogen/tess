@@ -33,7 +33,7 @@ object TessUtils {
         return s.split(" ")
     }
 
-    fun skillFromMagicType(type : PlayerHandler.MagicType, player: PlayerHandler.Player) : PlayerHandler.Skill{
+    fun skillFromMagicType(type : PlayerHandler.MagicType, player: PlayerHandler.Player) : PlayerHandler.Skill {
         return when(type){
             PlayerHandler.MagicType.CONSTRUCTION -> player.skills.first { it.name == "Construction" }
             PlayerHandler.MagicType.PROJECTION -> player.skills.first { it.name == "Projection" }
@@ -50,6 +50,5 @@ object TessUtils {
 
 val User.rpName : String
     get() = if (TessUtils.server.getNickname(this) != null) TessUtils.server.getNickname(this) else this.name
-
 val PlayerHandler.Player.rpName : String
-    get() = TessUtils.getMember(this).rpName
+    get() = if(TessUtils.server.members!!.any { playerID.contains(it.id) }) TessUtils.getMember(this).rpName else playerID

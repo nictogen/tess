@@ -70,7 +70,7 @@ object PlayerHandler {
                                 when (property.name) {
                                     "stats" -> (list as ArrayList<Stat>).add(Stat(StatType.valueOf(args[0]), Integer.parseInt(args[1])))
                                     "skills" -> (list as ArrayList<Skill>).add(Skill(args[0], Integer.parseInt(args[1]), args[2] == "true", args[3] == "true"))
-                                    "spells" -> (list as ArrayList<Spell>).add(Spell(args[0], MagicRank.valueOf(args[1]), MagicType.valueOf(args[3]), Integer.parseInt(args[4]), Integer.parseInt(args[5]), Integer.parseInt(args[6]), args[7]))
+                                    "spells" -> (list as ArrayList<Spell>).add(Spell(args[0], MagicRank.valueOf(args[1]), MagicType.valueOf(args[2]), Integer.parseInt(args[3]), Integer.parseInt(args[4]), Integer.parseInt(args[5]), args[6]))
                                     "masteries" -> (list as ArrayList<MasteryLevel>).add(MasteryLevel(MagicType.valueOf(args[0]), MagicRank.valueOf(args[1])))
                                 }
                             }

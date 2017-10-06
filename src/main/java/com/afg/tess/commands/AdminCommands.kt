@@ -4,10 +4,12 @@ import com.afg.tess.commands.api.Command
 import com.afg.tess.commands.api.CommandHandler
 import com.afg.tess.handlers.LocationHandler
 import com.afg.tess.handlers.PlayerHandler
-import com.afg.tess.handlers.RollHandler
 import com.afg.tess.init.Tess
 import com.afg.tess.util.TessUtils
 import com.afg.tess.util.rpName
+import java.io.File
+import java.io.FileWriter
+import java.io.PrintWriter
 
 
 /**
@@ -131,60 +133,33 @@ object AdminCommands {
 
     @Command(aliases = arrayOf("!forceroll", "!fr"))
     fun onRoll(info: CommandHandler.MessageInfo, player: PlayerHandler.Player, skillOrStatName: String, penalty: Int): String {
-        return if (TessUtils.isAdmin(info.user)) {
-            when {
-                player.stats.any { it.type.name.toLowerCase() == skillOrStatName.toLowerCase() } -> {
-                    val stat = player.stats.first { it.type.name.toLowerCase() == skillOrStatName.toLowerCase() }
-                    val penaltyString = if (penalty == 0) "" else ", modified by $penalty,"
-                    "${player.rpName}'s ${stat.type.name.toLowerCase().capitalize()}$penaltyString earned a(n) ${RollHandler.roll(stat, penalty).resultName}."
-                }
-                player.skills.any { it.name.toLowerCase() == skillOrStatName.toLowerCase() } -> {
-                    val skill = player.skills.first { it.name.toLowerCase() == skillOrStatName.toLowerCase() }
-                    val penaltyString = if (penalty == 0) "" else ", modified by $penalty,"
-                    "${player.rpName}'s ${skill.name}$penaltyString earned a(n) ${RollHandler.roll(skill, penalty).resultName}."
-                }
-                else -> ""
-            }
-        } else "You are not an admin."
+        return if (TessUtils.isAdmin(info.user)) PlayerCommands.onRoll(CommandHandler.MessageInfo(info.message, player, info.user), skillOrStatName, penalty)
+        else "You are not an admin."
     }
 
     @Command(aliases = arrayOf("!forceopposedroll", "!for"))
     fun onOpposedRoll(info: CommandHandler.MessageInfo, player1: PlayerHandler.Player, skillOrStatName: String, penalty: Int, player2: PlayerHandler.Player, skillOrStatName2: String, penalty2: Int): String {
-        if (TessUtils.isAdmin(info.user)) {
-            return when {
-                player1.stats.any { it.type.name.toLowerCase() == skillOrStatName.toLowerCase() } -> {
-                    val stat = player1.stats.first { it.type.name.toLowerCase() == skillOrStatName2.toLowerCase() }
-                    val penaltyString = if (penalty == 0) "" else ", modified by $penalty,"
-                    val result = when {
-                        player2.stats.any { it.type.name.toLowerCase() == skillOrStatName2.toLowerCase() } -> {
-                            val stat2 = player2.stats.first { it.type.name.toLowerCase() == skillOrStatName2.toLowerCase() }
-                            RollHandler.opposedRoll(stat, penalty, stat2, penalty2)
-                        }
-                        player2.skills.any { it.name.toLowerCase() == skillOrStatName2.toLowerCase() } -> {
-                            val skill = player2.skills.first { it.name.toLowerCase() == skillOrStatName2.toLowerCase() }
-                            RollHandler.opposedRoll(stat, penalty, skill, penalty2)
-                        }
-                        else -> null!!
-                    }
-                    "${player1.rpName}'s ${stat.type.name.toLowerCase().capitalize()}$penaltyString earned a(n) ${result.resultName}."
-                }
-                player1.skills.any { it.name.toLowerCase() == skillOrStatName.toLowerCase() } -> {
-                    val skill = player1.skills.first { it.name.toLowerCase() == skillOrStatName.toLowerCase() }
-                    val penaltyString = if (penalty == 0) "" else ", modified by $penalty,"
-                    val result = when {
-                        player2.stats.any { it.type.name.toLowerCase() == skillOrStatName2.toLowerCase() } -> {
-                            RollHandler.opposedRoll(skill, penalty, player2.stats.first { it.type.name.toLowerCase() == skillOrStatName2.toLowerCase() }, penalty2)
-                        }
-                        player2.skills.any { it.name.toLowerCase() == skillOrStatName2.toLowerCase() } -> {
-                            RollHandler.opposedRoll(skill, penalty, player2.skills.first { it.name.toLowerCase() == skillOrStatName2.toLowerCase() }, penalty2)
-                        }
-                        else -> null!!
-                    }
-                    "${player1.rpName}'s ${skill.name}$penaltyString earned a(n) ${result.resultName}."
-                }
-                else -> ""
-            }
-        } else return "You are not an admin."
+        return if (TessUtils.isAdmin(info.user)) PlayerCommands.onOpposedRoll(CommandHandler.MessageInfo(info.message, player1, info.user), skillOrStatName, penalty, player2, skillOrStatName2, penalty2)
+        else "You are not an admin."
+    }
+
+    @Command(aliases = arrayOf("!forcecastvscast", "!fcvc"))
+    fun onCastVsCast(info: CommandHandler.MessageInfo, player1: PlayerHandler.Player, spellName : String, modifier: Int, player2: PlayerHandler.Player, spellName2: String, modifier2: Int): String {
+        return if (TessUtils.isAdmin(info.user)) PlayerCommands.onCastVsCast(CommandHandler.MessageInfo(info.message, player1, info.user), player1.spells.first { it.name == spellName }, modifier, player2, spellName2, modifier2)
+        else "You are not an admin."
+    }
+
+    @Command(aliases = arrayOf("!force", "!f"))
+    fun onForce(info: CommandHandler.MessageInfo, player1: PlayerHandler.Player): String {
+        val string = info.message.content.split(" ")
+        var message = ""
+        (2 until string.size).forEach { message += ("${string[it]} ") }
+        string.forEach { message += (it + " ") }
+        return if (TessUtils.isAdmin(info.user)){
+            CommandHandler.readCommand(info.message, message, player1)
+            ""
+        }
+        else "You are not an admin."
     }
 
     @Command(aliases = arrayOf("!hp"))
@@ -207,6 +182,51 @@ object AdminCommands {
             if (player.mana == 0) return "${player.rpName}'s mana is now ${player.mana}, they are now knocked out."
             return "${player.rpName}'s mana is now ${player.mana}"
         } else return "You are not an admin."
+    }
+
+    @Command(aliases = arrayOf("!createnpc", "!cnpc"))
+    fun onCreateNPC(info: CommandHandler.MessageInfo, name : String) : String{
+
+        //Creating the player
+        val player = PlayerHandler.Player()
+        player.playerID = name
+
+        //Stats
+        player.stats.add(PlayerHandler.Stat(PlayerHandler.StatType.STRENGTH, 1))
+        player.stats.add(PlayerHandler.Stat(PlayerHandler.StatType.COORDINATION, 1))
+        player.stats.add(PlayerHandler.Stat(PlayerHandler.StatType.CONSTITUTION, 1))
+        player.stats.add(PlayerHandler.Stat(PlayerHandler.StatType.SENSE, 1))
+        player.stats.add(PlayerHandler.Stat(PlayerHandler.StatType.CHARM, 1))
+        player.stats.add(PlayerHandler.Stat(PlayerHandler.StatType.MANA, 1))
+        player.stats.add(PlayerHandler.Stat(PlayerHandler.StatType.INTELLIGENCE, 1))
+
+        //Mana Skills
+        player.skills.add(PlayerHandler.Skill("Mana_Efficiency", 0, false, false))
+        player.skills.add(PlayerHandler.Skill("Construction", 0, false, false))
+        player.skills.add(PlayerHandler.Skill("Projection", 0, false, false))
+        player.skills.add(PlayerHandler.Skill("Control", 0, false, false))
+        player.skills.add(PlayerHandler.Skill("Alchemy", 0, false, false))
+        player.skills.add(PlayerHandler.Skill("Healing", 0, false, false))
+        player.skills.add(PlayerHandler.Skill("Rune_Magic", 0, false, false))
+        player.skills.add(PlayerHandler.Skill("Summoning", 0, false, false))
+        player.skills.add(PlayerHandler.Skill("Transformation", 0, false, false))
+
+        //Adding the player
+        PlayerHandler.players.add(player)
+        PlayerHandler.saveData(player)
+
+        val playerList = File(Tess.playerListFilePath)
+        playerList.createNewFile()
+
+        val fileWriter = FileWriter(playerList)
+        val printWriter = PrintWriter(fileWriter)
+
+        for (s in PlayerHandler.players)
+            printWriter.println(s.playerID)
+
+        printWriter.close()
+
+        return "Created npc $name."
     }
 
     @Command(aliases = arrayOf("!clear"))
