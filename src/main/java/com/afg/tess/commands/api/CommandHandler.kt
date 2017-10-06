@@ -22,7 +22,7 @@ object CommandHandler : MessageCreateListener, MessageEditListener {
 
     private val commands = HashMap<Array<String>, CommandHolder>()
 
-    fun loadCommands(obj : Any) {
+    fun loadCommands(obj: Any) {
         obj::class.declaredFunctions.forEach { f ->
             if (f.annotations.any { it is Command }) {
                 val aliases = (f.annotations.filter { it is Command }[0] as Command).aliases
@@ -30,7 +30,8 @@ object CommandHandler : MessageCreateListener, MessageEditListener {
             }
         }
     }
-    class CommandHolder(val obj : Any, val func : KFunction<*>)
+
+    class CommandHolder(val obj: Any, val func: KFunction<*>)
 
     override fun onMessageCreate(p0: DiscordAPI?, p1: Message) {
         readCommand(p1, p1.content)
@@ -64,17 +65,23 @@ object CommandHandler : MessageCreateListener, MessageEditListener {
                     return@forEach
                 when (par.type) {
                     String::class.starProjectedType -> argObjects.put(par, args[par.index - 2])
-                    PlayerHandler.Player::class.starProjectedType -> argObjects.put(par, TessUtils.getPlayer(args[par.index - 2])!!)
+                    PlayerHandler.Player::class.starProjectedType -> argObjects.put(par, TessUtils.getPlayer(args[par.index - 2]))
                     Int::class.starProjectedType -> argObjects.put(par, Integer.parseInt(args[par.index - 2]))
                     Boolean::class.starProjectedType -> if (args[par.index - 2] == "true") argObjects.put(par, true) else if (args[par.index - 2] == "false") argObjects.put(par, false) else null!!
+                    PlayerHandler.Skill::class.starProjectedType -> argObjects.put(par, player.skills.first { it.name.toLowerCase() == args[par.index - 2].toLowerCase() })
+                    PlayerHandler.Stat::class.starProjectedType -> argObjects.put(par, player.stats.first { it.type.name.toLowerCase() == args[par.index - 2].toLowerCase() })
+                    PlayerHandler.Spell::class.starProjectedType -> argObjects.put(par, player.spells.first { it.name.toLowerCase() == args[par.index - 2].toLowerCase() })
+                    PlayerHandler.MagicType::class.starProjectedType -> argObjects.put(par, PlayerHandler.MagicType.valueOf(args[par.index - 2].toUpperCase()))
                     String::class.starProjectedType.withNullability(true) -> argObjects.put(par, args[par.index - 2])
-                    PlayerHandler.Player::class.starProjectedType.withNullability(true) -> argObjects.put(par, TessUtils.getPlayer(args[par.index - 2])!!)
+                    PlayerHandler.Player::class.starProjectedType.withNullability(true) -> argObjects.put(par, TessUtils.getPlayer(args[par.index - 2]))
                     Int::class.starProjectedType.withNullability(true) -> argObjects.put(par, Integer.parseInt(args[par.index - 2]))
                     Boolean::class.starProjectedType.withNullability(true) -> if (args[par.index - 2] == "true") argObjects.put(par, true) else if (args[par.index - 2] == "false") argObjects.put(par, false) else null!!
-
+                    PlayerHandler.Skill::class.starProjectedType.withNullability(true) -> argObjects.put(par, player.skills.first { it.name.toLowerCase() == args[par.index - 2].toLowerCase() })
+                    PlayerHandler.Stat::class.starProjectedType.withNullability(true) -> argObjects.put(par, player.stats.first { it.type.name.toLowerCase() == args[par.index - 2].toLowerCase() })
+                    PlayerHandler.MagicType::class.starProjectedType.withNullability(true) -> argObjects.put(par, PlayerHandler.MagicType.valueOf(args[par.index - 2].toUpperCase()))
                 }
             }
-            if(function.returnType == String::class.starProjectedType) {
+            if (function.returnType == String::class.starProjectedType) {
                 val s = function.callBy(argObjects) as String
                 message.delete()
                 message.reply(s)

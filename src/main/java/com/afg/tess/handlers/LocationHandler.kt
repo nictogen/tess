@@ -1,6 +1,7 @@
 package com.afg.tess.handlers
 
 import com.afg.tess.commands.AdminCommands
+import com.afg.tess.commands.PlayerCommands
 import com.afg.tess.init.Tess
 import com.afg.tess.util.TessUtils
 import de.btobastian.javacord.entities.Channel
@@ -45,7 +46,11 @@ object LocationHandler {
      * Travels to a nearby location
      */
     fun travelToLocation(player: PlayerHandler.Player, integer: Int, message: Message) {
-        player.location = getLocationFromName(player.location)!!.nearbyLocations[integer - 1].channel.name
+        player.location = getLocationFromName(player.location)!!.nearbyLocations[integer].channel.name
+        if(PlayerCommands.pickupMap.containsKey(player)){
+            PlayerCommands.pickupMap[player]!!.location = getLocationFromName(player.location)!!.nearbyLocations[integer - 1].channel.name
+            lockAllOtherChannels( PlayerCommands.pickupMap[player]!!, TessUtils.getMember( PlayerCommands.pickupMap[player]!!))
+        }
         lockAllOtherChannels(player, message.author)
     }
 
@@ -53,6 +58,10 @@ object LocationHandler {
      * Travels to any location
      */
     fun travelToLocationAnywhere(user : User, player: PlayerHandler.Player, nameOfLocation: String) {
+        if(PlayerCommands.pickupMap.containsKey(player)){
+            PlayerCommands.pickupMap[player]!!.location = getLocationFromName(nameOfLocation)!!.channel.name
+            lockAllOtherChannels( PlayerCommands.pickupMap[player]!!, TessUtils.getMember( PlayerCommands.pickupMap[player]!!))
+        }
         player.location = getLocationFromName(nameOfLocation)!!.channel.name
         lockAllOtherChannels(player, user)
     }
@@ -85,6 +94,6 @@ object LocationHandler {
         PlayerHandler.saveData(player)
     }
 
-    private fun getLocationFromName(string: String): Location? = if(locationList.any { it.channel.name == string }) locationList.first{ it.channel.name == string } else null
+    fun getLocationFromName(string: String): Location? = if(locationList.any { it.channel.name == string }) locationList.first{ it.channel.name == string } else locationList.first { it.channel.name == "dock" }
     class Location(val channel: Channel) { val nearbyLocations = ArrayList<Location>() }
 }

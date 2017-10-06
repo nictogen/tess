@@ -6,6 +6,7 @@ import com.afg.tess.commands.api.CommandHandler
 import com.afg.tess.handlers.LocationHandler
 import com.afg.tess.handlers.PlayerHandler
 import com.afg.tess.handlers.TimeHandler
+import com.afg.tess.util.TessUtils
 import de.btobastian.javacord.listener.message.MessageCreateListener
 
 /**
@@ -26,7 +27,7 @@ class Main {
             Tess.arcApi.connectBlocking()
 
             //Register handler to listen for the 'make player' message
-            Tess.api.registerListener(MessageCreateListener { _, message -> if (message.channelReceiver != null && message.content.contains("make") && message.content.contains("a player")) message.channelReceiver.server.members.forEach { if (message.content.contains(it.id)) PlayerHandler.createPlayer(it, message) } })
+            Tess.api.registerListener(MessageCreateListener { _, message -> if (message.channelReceiver != null && message.content.contains("make") && message.content.contains("a player") && TessUtils.isAdmin(message.author)) message.channelReceiver.server.members.forEach { m -> if (message.content.contains(m.id) && !PlayerHandler.players.any { it.playerID == m.id }) PlayerHandler.createPlayer(m, message) } })
 
             //Register handler to listen for commands
             Tess.api.registerListener(CommandHandler)
