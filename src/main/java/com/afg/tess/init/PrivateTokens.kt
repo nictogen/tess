@@ -10,7 +10,7 @@ object PrivateTokens {
 
     fun getAPI() : DiscordAPI{
 //       return Javacord.getApi("MzU1NDQzMDU4MjQzNzk2OTkz.DJM3rw.NbYbY7m8S1AdcAoJC1xBsSzO3Ac", true)
-        return Javacord.getApi("MzU0MDM2NTk3MDE4MTk4MDE3.DJuBWA.YWLbkKi8fmcdQOck3mUqvYEloNU", true)
+        return Javacord.getApi("MzY2Mzc5OTE3ODQ1MjAwODk3.DLsDIg.0zeFAqkZkBC2KQ1I2Ekw2hQPyuk", true)
     }
 
     fun getNAPI() : DiscordAPI {

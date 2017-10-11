@@ -1,6 +1,7 @@
 package com.afg.tess.commands.api
 
 import com.afg.tess.handlers.PlayerHandler
+import com.afg.tess.init.Tess
 import com.afg.tess.util.TessUtils
 import de.btobastian.javacord.DiscordAPI
 import de.btobastian.javacord.entities.User
@@ -12,6 +13,7 @@ import kotlin.collections.LinkedHashMap
 import kotlin.reflect.KFunction
 import kotlin.reflect.KParameter
 import kotlin.reflect.full.declaredFunctions
+import kotlin.reflect.full.isSubtypeOf
 import kotlin.reflect.full.starProjectedType
 import kotlin.reflect.full.withNullability
 
@@ -34,8 +36,11 @@ object CommandHandler : MessageCreateListener, MessageEditListener {
     class CommandHolder(val obj: Any, val func: KFunction<*>)
 
     override fun onMessageCreate(p0: DiscordAPI?, p1: Message) {
-        val player = TessUtils.getPlayer(p1.author.id)
-        readCommand(p1, p1.content, player)
+        if(p1.author != Tess.api.yourself) {
+            val p = PlayerHandler.players
+            val player = TessUtils.getPlayer(p1.author.id)
+            readCommand(p1, p1.content, player)
+        }
     }
 
     override fun onMessageEdit(p0: DiscordAPI?, p1: Message, p2: String) {
@@ -49,10 +54,9 @@ object CommandHandler : MessageCreateListener, MessageEditListener {
             commands.forEach C@ { a, c ->
                 a.forEach { alias ->
                     if (alias == args[0]){
-                        try {
+//                        try {
                             doCommand(c.obj, c.func, if (args.size > 1) args.subList(1, args.size) else emptyList(), player, message)
-                        } catch (e : Exception){}
-
+//                        } catch (e : Exception){}
                     }
                 }
             }
@@ -61,7 +65,7 @@ object CommandHandler : MessageCreateListener, MessageEditListener {
 
     private fun doCommand(obj: Any, function: KFunction<*>, args: List<String>, player: PlayerHandler.Player, message: Message) {
         val argObjects = LinkedHashMap<KParameter, Any>()
-        try {
+//        try {
             argObjects.put(function.parameters[0], obj)
             val member = TessUtils.getMember(player)
             argObjects.put(function.parameters[1], MessageInfo(message, player, member))
@@ -69,22 +73,18 @@ object CommandHandler : MessageCreateListener, MessageEditListener {
             function.parameters.subList(2, function.parameters.size).forEach { par ->
                 if (par.isOptional && args.size <= par.index - 2)
                     return@forEach
-                when (par.type) {
-                    String::class.starProjectedType -> argObjects.put(par, args[par.index - 2])
-                    PlayerHandler.Player::class.starProjectedType -> argObjects.put(par, TessUtils.getPlayer(args[par.index - 2]))
-                    Int::class.starProjectedType -> argObjects.put(par, Integer.parseInt(args[par.index - 2]))
-                    Boolean::class.starProjectedType -> if (args[par.index - 2] == "true") argObjects.put(par, true) else if (args[par.index - 2] == "false") argObjects.put(par, false) else null!!
-                    PlayerHandler.Skill::class.starProjectedType -> argObjects.put(par, player.skills.first { it.name.toLowerCase() == args[par.index - 2].toLowerCase() })
-                    PlayerHandler.Stat::class.starProjectedType -> argObjects.put(par, player.stats.first { it.type.name.toLowerCase() == args[par.index - 2].toLowerCase() })
-                    PlayerHandler.Spell::class.starProjectedType -> argObjects.put(par, player.spells.first { it.name.toLowerCase() == args[par.index - 2].toLowerCase() })
-                    PlayerHandler.MagicType::class.starProjectedType -> argObjects.put(par, PlayerHandler.MagicType.valueOf(args[par.index - 2].toUpperCase()))
-                    String::class.starProjectedType.withNullability(true) -> argObjects.put(par, args[par.index - 2])
-                    PlayerHandler.Player::class.starProjectedType.withNullability(true) -> argObjects.put(par, TessUtils.getPlayer(args[par.index - 2]))
-                    Int::class.starProjectedType.withNullability(true) -> argObjects.put(par, Integer.parseInt(args[par.index - 2]))
-                    Boolean::class.starProjectedType.withNullability(true) -> if (args[par.index - 2] == "true") argObjects.put(par, true) else if (args[par.index - 2] == "false") argObjects.put(par, false) else null!!
-                    PlayerHandler.Skill::class.starProjectedType.withNullability(true) -> argObjects.put(par, player.skills.first { it.name.toLowerCase() == args[par.index - 2].toLowerCase() })
-                    PlayerHandler.Stat::class.starProjectedType.withNullability(true) -> argObjects.put(par, player.stats.first { it.type.name.toLowerCase() == args[par.index - 2].toLowerCase() })
-                    PlayerHandler.MagicType::class.starProjectedType.withNullability(true) -> argObjects.put(par, PlayerHandler.MagicType.valueOf(args[par.index - 2].toUpperCase()))
+                when {
+                    par.type == String::class.starProjectedType -> argObjects.put(par, args[par.index - 2])
+                    par.type == PlayerHandler.Player::class.starProjectedType -> argObjects.put(par, TessUtils.getPlayer(args[par.index - 2]))
+                    par.type == Int::class.starProjectedType -> argObjects.put(par, Integer.parseInt(args[par.index - 2]))
+                    par.type == Boolean::class.starProjectedType -> if (args[par.index - 2] == "true") argObjects.put(par, true) else if (args[par.index - 2] == "false") argObjects.put(par, false) else null!!
+                    par.type == String::class.starProjectedType.withNullability(true) -> argObjects.put(par, args[par.index - 2])
+                    par.type == PlayerHandler.Player::class.starProjectedType.withNullability(true) -> argObjects.put(par, TessUtils.getPlayer(args[par.index - 2]))
+                    par.type == Int::class.starProjectedType.withNullability(true) -> argObjects.put(par, Integer.parseInt(args[par.index - 2]))
+                    par.type == Boolean::class.starProjectedType.withNullability(true) -> if (args[par.index - 2] == "true") argObjects.put(par, true) else if (args[par.index - 2] == "false") argObjects.put(par, false) else null!!
+                    par.type.isSubtypeOf(ArrayList::class.starProjectedType) -> {
+                        argObjects.put(par, args.subList(par.index - 2, args.size))
+                    }
                 }
             }
             if (function.returnType == String::class.starProjectedType) {
@@ -95,9 +95,9 @@ object CommandHandler : MessageCreateListener, MessageEditListener {
                 message.delete()
                 function.callBy(argObjects)
             }
-        } catch (e: Exception) {
-            message.reply("Incorrect parameters.")
-        }
+//        } catch (e: Exception) {
+//            message.reply("Incorrect parameters.")
+//        }
 
     }
 

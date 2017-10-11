@@ -12,8 +12,9 @@ public class Tess
 	public static Random rand = new Random();
 	public static DiscordAPI api;
 	public static DiscordAPI arcApi;
-	public static String playerDataFolderPath = "tessData/arp/players";
-	public static String playerListFilePath = "tessData/arp/playerList";
+	public static String playerDataFolderPath = "tessData/players";
+	public static String locationFolderPath = "tessData/locations";
+	public static String shipFolderPath = "tessData/ships";
 
 	public static void main(String[] args) { Main.main(); }
 
