@@ -1,6 +1,6 @@
 package com.afg.tess.init;
 
-import de.btobastian.javacord.DiscordAPI;
+import de.btobastian.javacord.DiscordApi;
 
 import java.util.Random;
 
@@ -10,11 +10,10 @@ import java.util.Random;
 public class Tess
 {
 	public static Random rand = new Random();
-	public static DiscordAPI api;
-	public static DiscordAPI arcApi;
+	public static DiscordApi api;
+//	public static DiscordAPI arcApi;
 	public static String playerDataFolderPath = "tessData/players";
 	public static String locationFolderPath = "tessData/locations";
-	public static String shipFolderPath = "tessData/ships";
 
 	public static void main(String[] args) { Main.main(); }
 

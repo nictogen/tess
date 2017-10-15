@@ -1,13 +1,13 @@
 package com.afg.tess.commands.api
 
 import com.afg.tess.handlers.PlayerHandler
-import com.afg.tess.init.Tess
 import com.afg.tess.util.TessUtils
-import de.btobastian.javacord.DiscordAPI
 import de.btobastian.javacord.entities.User
 import de.btobastian.javacord.entities.message.Message
-import de.btobastian.javacord.listener.message.MessageCreateListener
-import de.btobastian.javacord.listener.message.MessageEditListener
+import de.btobastian.javacord.events.message.MessageCreateEvent
+import de.btobastian.javacord.events.message.MessageEditEvent
+import de.btobastian.javacord.listeners.message.MessageCreateListener
+import de.btobastian.javacord.listeners.message.MessageEditListener
 import java.util.*
 import kotlin.collections.LinkedHashMap
 import kotlin.reflect.KFunction
@@ -21,6 +21,17 @@ import kotlin.reflect.full.withNullability
  * Created by AFlyingGrayson on 9/18/17
  */
 object CommandHandler : MessageCreateListener, MessageEditListener {
+    override fun onMessageEdit(event: MessageEditEvent) {
+        if (!event.message.get().author.get().isYourself && event.channel != null && TessUtils.isPlayerChannel(event.channel.id.toString())) {
+            readCommand(event.message.get(), event.message.get().content, TessUtils.getPlayer(event.channel.id.toString()))
+        }
+    }
+
+    override fun onMessageCreate(event: MessageCreateEvent) {
+        if (!event.message.author.get().isYourself && event.channel != null && TessUtils.isPlayerChannel(event.channel.id.toString())) {
+            readCommand(event.message, event.message.content, TessUtils.getPlayer(event.channel.id.toString()))
+        }
+    }
 
     private val commands = HashMap<Array<String>, CommandHolder>()
 
@@ -35,29 +46,13 @@ object CommandHandler : MessageCreateListener, MessageEditListener {
 
     class CommandHolder(val obj: Any, val func: KFunction<*>)
 
-    override fun onMessageCreate(p0: DiscordAPI?, p1: Message) {
-        if(p1.author != Tess.api.yourself) {
-            val p = PlayerHandler.players
-            val player = TessUtils.getPlayer(p1.author.id)
-            readCommand(p1, p1.content, player)
-        }
-    }
-
-    override fun onMessageEdit(p0: DiscordAPI?, p1: Message, p2: String) {
-        val player = TessUtils.getPlayer(p1.author.id)
-        readCommand(p1, p1.content, player)
-    }
-
     fun readCommand(message: Message, content: String, player: PlayerHandler.Player) {
         val args = content.split(" ")
         if (args.isNotEmpty()) {
             commands.forEach C@ { a, c ->
                 a.forEach { alias ->
-                    if (alias == args[0]){
-//                        try {
-                            doCommand(c.obj, c.func, if (args.size > 1) args.subList(1, args.size) else emptyList(), player, message)
-//                        } catch (e : Exception){}
-                    }
+                    if (alias == args[0])
+                        doCommand(c.obj, c.func, if (args.size > 1) args.subList(1, args.size) else emptyList(), player, message)
                 }
             }
         }
@@ -67,30 +62,26 @@ object CommandHandler : MessageCreateListener, MessageEditListener {
         val argObjects = LinkedHashMap<KParameter, Any>()
 //        try {
             argObjects.put(function.parameters[0], obj)
-            val member = TessUtils.getMember(player)
-            argObjects.put(function.parameters[1], MessageInfo(message, player, member))
+            val member = message.author
+            argObjects.put(function.parameters[1], MessageInfo(message, player, member.get()))
 
             function.parameters.subList(2, function.parameters.size).forEach { par ->
                 if (par.isOptional && args.size <= par.index - 2)
                     return@forEach
                 when {
                     par.type == String::class.starProjectedType -> argObjects.put(par, args[par.index - 2])
-                    par.type == PlayerHandler.Player::class.starProjectedType -> argObjects.put(par, TessUtils.getPlayer(args[par.index - 2]))
                     par.type == Int::class.starProjectedType -> argObjects.put(par, Integer.parseInt(args[par.index - 2]))
                     par.type == Boolean::class.starProjectedType -> if (args[par.index - 2] == "true") argObjects.put(par, true) else if (args[par.index - 2] == "false") argObjects.put(par, false) else null!!
                     par.type == String::class.starProjectedType.withNullability(true) -> argObjects.put(par, args[par.index - 2])
-                    par.type == PlayerHandler.Player::class.starProjectedType.withNullability(true) -> argObjects.put(par, TessUtils.getPlayer(args[par.index - 2]))
                     par.type == Int::class.starProjectedType.withNullability(true) -> argObjects.put(par, Integer.parseInt(args[par.index - 2]))
                     par.type == Boolean::class.starProjectedType.withNullability(true) -> if (args[par.index - 2] == "true") argObjects.put(par, true) else if (args[par.index - 2] == "false") argObjects.put(par, false) else null!!
-                    par.type.isSubtypeOf(ArrayList::class.starProjectedType) -> {
-                        argObjects.put(par, args.subList(par.index - 2, args.size))
-                    }
+                    par.type.isSubtypeOf(ArrayList::class.starProjectedType) -> { argObjects.put(par, args.subList(par.index - 2, args.size)) }
                 }
             }
             if (function.returnType == String::class.starProjectedType) {
                 val s = function.callBy(argObjects) as String
                 message.delete()
-                message.reply(s)
+                message.channel.sendMessage(s)
             } else {
                 message.delete()
                 function.callBy(argObjects)

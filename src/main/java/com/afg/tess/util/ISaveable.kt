@@ -1,5 +1,6 @@
 package com.afg.tess.util
 
+import com.afg.tess.handlers.LocationHandler
 import com.afg.tess.handlers.PlayerHandler
 import java.io.File
 import java.io.FileWriter
@@ -19,8 +20,8 @@ interface ISaveable {
 
     companion object {
         @Suppress("UNCHECKED_CAST")
-        inline fun <reified T : ISaveable> loadData(folderPath : String, list : ArrayList<T>) {
-            list.clear()
+        inline fun <reified T : ISaveable> loadData(folderPath: String, list: ArrayList<T>, clear: Boolean) {
+            if(clear) list.clear()
             val dr = File(folderPath)
             dr.mkdirs()
             val files = dr.listFiles()
@@ -40,37 +41,47 @@ interface ISaveable {
                     if (data[property.name] != null)
                         when {
                             property.returnType == Int::class.starProjectedType -> varProperty.setter.call(obj, Integer.parseInt(data[property.name]))
+                            property.returnType == Double::class.starProjectedType -> varProperty.setter.call(obj, data[property.name]!!.toDouble())
                             property.returnType == String::class.starProjectedType -> varProperty.setter.call(obj, data[property.name])
                             property.returnType == Boolean::class.starProjectedType -> varProperty.setter.call(obj, data[property.name] == "true")
+                            property.returnType == PlayerHandler.Race::class.starProjectedType -> varProperty.setter.call(obj, PlayerHandler.Race.valueOf(data[property.name]!!))
+                            property.returnType == PlayerHandler.Class::class.starProjectedType -> varProperty.setter.call(obj, PlayerHandler.Class.valueOf(data[property.name]!!))
                             property.returnType.isSubtypeOf(ArrayList::class.starProjectedType) -> {
                                 val arrayList = property.getter.call(obj) as ArrayList<*>
                                 arrayList.clear()
                                 val dataStrings = TessUtils.listFromString(data[property.name]!!)
                                 dataStrings.forEach {
                                     val args = it.split("$")
-                                    if(args.size > 1 || args[0].length > 1)
-                                    when (property.name) {
-                                        "stats" -> (arrayList as ArrayList<PlayerHandler.Stat>).add(PlayerHandler.Stat(PlayerHandler.StatType.valueOf(args[0]), Integer.parseInt(args[1])))
-                                        "nearby" -> (arrayList as ArrayList<String>).add(args[0])
-                                        "bayIds" -> (arrayList as ArrayList<String>).add(args[0])
-                                        "crewIds" -> (arrayList as ArrayList<String>).add(args[0])
-                                    }
+                                    if (args.size > 1 || args[0].length > 1)
+                                        when (property.name) {
+                                            "stats" -> (arrayList as ArrayList<PlayerHandler.Stat>).add(PlayerHandler.Stat(PlayerHandler.StatType.valueOf(args[0]), Integer.parseInt(args[1])))
+                                            "nearby" -> (arrayList as ArrayList<String>).add(args[0])
+                                            "skills" -> (arrayList as ArrayList<String>).add(args[0])
+                                        }
+                                }
+                            }
+                            property.returnType.isSubtypeOf(LinkedList::class.starProjectedType) -> {
+                                val linkedList = property.getter.call(obj) as LinkedList<*>
+                                linkedList.clear()
+                                val dataStrings = TessUtils.listFromString(data[property.name]!!)
+                                dataStrings.forEach {
+                                    val args = it.split("$")
+                                    if (args.size > 1 || args[0].length > 1)
+                                        when (property.name) {
+                                            "combatSquares" -> (linkedList as LinkedList<LocationHandler.Location.CombatSquare>).add(LocationHandler.Location.CombatSquare.valueOf(args[0]))
+                                        }
                                 }
                             }
                         }
                 }
                 list.add(obj)
             }
-
         }
-
     }
 
     fun saveData() {
         val data = HashMap<String, String>()
-        this::class.memberProperties.forEach { property ->
-            data.put(property.name, property.getter.call(this).toString())
-        }
+        this::class.memberProperties.forEach { property -> data.put(property.name, property.getter.call(this).toString()) }
         val dir = File(getFolderPath())
         dir.mkdirs()
         val dataFile = File(dir, getFileName())
@@ -81,7 +92,7 @@ interface ISaveable {
         printWriter.close()
     }
 
-    fun getFolderPath() : String
+    fun getFolderPath(): String
 
-    fun getFileName() : String
+    fun getFileName(): String
 }

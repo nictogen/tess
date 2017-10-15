@@ -1,10 +1,14 @@
 package com.afg.tess.handlers
 
 import com.afg.tess.init.Tess
+import com.afg.tess.players.items.Item
+import com.afg.tess.players.skills.Skill
+import com.afg.tess.players.skills.fighter.Strike
 import com.afg.tess.util.ISaveable
-import de.btobastian.javacord.entities.User
+import de.btobastian.javacord.entities.channels.ServerTextChannelBuilder
 import de.btobastian.javacord.entities.message.Message
 import java.util.*
+import kotlin.collections.ArrayList
 
 
 /**
@@ -17,69 +21,102 @@ object PlayerHandler {
     /**
      * Creates a new player and saves it to the data file
      */
-    fun createPlayer(member: User, message: Message) {
-        players.forEach { player ->
-            if (player.playerID == member.id) {
-                message.reply(member.name + " is already a player.")
-                return
-            }
-        }
+    fun createPlayer(message: Message, name : String) {
 
         //Creating the player
         val player = Player()
-        player.playerID = member.id
 
+        player.channelID = ServerTextChannelBuilder(message.channel.asServerTextChannel().get().server).setName("rp-name").create().get().id.toString()
+        player.rpName = name
         //Stats
-//        player.stats.add(Stat(StatType.STRENGTH, 1))
-//        player.stats.add(Stat(StatType.COORDINATION, 1))
-//        player.stats.add(Stat(StatType.CONSTITUTION, 1))
-//        player.stats.add(Stat(StatType.CHARM, 1))
-//        player.stats.add(Stat(StatType.INTELLIGENCE, 1))
-//        player.stats.addAll(race.getStartingStats())
-//        player.talents.addAll(race.getStartingTalents())
-//        player.talents.addAll(playerClass.getStartingTalents())
-//        player.race = race::class.simpleName!!
-//        player.playerClass = playerClass::class.simpleName!!
+//        player.stats.add(Stat(StatType.STRENGTH, race.strength))
+//        player.stats.add(Stat(StatType.COORDINATION, race.coordination))
+//        player.stats.add(Stat(StatType.HEALTH, race.health))
+//        player.stats.add(Stat(StatType.CHARM, race.charm))
+//        player.stats.add(Stat(StatType.INTELLIGENCE, race.intelligence))
+//        player.stats.add(Stat(StatType.MAGIC, race.magic))
+//        player.stats.add(Stat(StatType.LUCK, race.luck))
+//
+//        player.skills.add(playerClass.defaultSkill.getID())
+//        player.skills.addAll(race.skills.map { it.getID() })
+//
+//        player.race = race
+//
+//        player.playerClass = playerClass
 
         //Adding the player
         players.add(player)
         player.saveData()
 
-        message.reply(member.name + " is now a player.")
+        message.channel.sendMessage("Created player: $name")
     }
 
     /**
      * The actual player, along with all its data variables
      */
-    class Player : ISaveable{
-        var playerID = ""
+    class Player : ISaveable {
+        var channelID = ""
+        var rpName = ""
         var location = UUID.randomUUID().toString()
-//        var race = ""
-//        var playerClass = ""
-//        var stats = ArrayList<Stat>()
-//        var talents = ArrayList<Talent>()
+        var combatLocationX = -1
+        var combatLocationY = -1
+        var race = Race.HUMAN
+        var playerClass = Class.FIGHTER
+        var stats = ArrayList<Stat>()
+        var skills = ArrayList<String>()
+        var inventory = ArrayList<Item.ItemStack>()
+        var mainHand : Item.ItemStack? = null
+        var offHand : Item.ItemStack? = null
+        var clothes : Item.ItemStack? = null
+        var party = ""
+        var blocking = false
+        var recovering = false
 //        var xp = 0
-//        val maxHealth : Int
-//        get() = if(stats.any { it.type == StatType.STRENGTH} && stats.any { it.type == StatType.CONSTITUTION }) ((stats.first { it.type == StatType.STRENGTH }.value + stats.first{ it.type == StatType.CONSTITUTION}.value)) else 0
-//        var health = maxHealth
+        var health = 1.0
 
         override fun getFolderPath() = Tess.playerDataFolderPath!!
 
-        override fun getFileName() = playerID
+        override fun getFileName() = channelID
+
+        fun attack(player: Player, strengthPercent : Double, accuracy : Int) : String {
+            return if(Tess.rand.nextInt(100) <= accuracy){
+                val attack = stats.first { it.type == StatType.STRENGTH }.value.toDouble()*(strengthPercent/100)
+                val defense = player.stats.first { it.type == StatType.COORDINATION }.value.toDouble()
+                var damage = attack * attack / (attack + defense)
+                damage = Math.round(damage * 100.0) / 100.0
+                player.health -= damage
+                player.health = Math.round(health * 100.0) / 100.0
+                player.saveData()
+                "${this.rpName} hit ${player.rpName} for $damage damage.\n${player.rpName} now has ${player.health} hp."
+                //TODO death, defeat, etc
+                //TODO evasion mechanics, armor, etc
+                //TODO weapon accuracy/damage, mastery skills, etc
+            } else {
+                "${this.rpName}'s attack missed."
+            }
+        }
     }
 
-    class Stat(private val type: StatType, var value: Int) {
-        override fun toString(): String {
-            return "$type$$value"
-        }
+    class Stat(val type: StatType, var value: Int) {
+        override fun toString(): String { return "$type$$value" }
     }
 
     enum class StatType {
         STRENGTH,
         COORDINATION,
-        CONSTITUTION,
+        HEALTH,
         INTELLIGENCE,
-        CHARM
+        CHARM,
+        MAGIC,
+        LUCK
+    }
+
+    enum class Race(var strength : Int, var coordination : Int, var health : Int, var intelligence : Int, var charm : Int, var magic : Int, var luck : Int, var skills : ArrayList<Skill>){
+        HUMAN(5, 5, 5, 5, 5, 5, 5, arrayListOf())
+    }
+
+    enum class Class(var defaultSkill : Skill, var skills: ArrayList<Skill>) {
+        FIGHTER(Strike, arrayListOf())
     }
 
 }

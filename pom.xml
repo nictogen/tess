@@ -14,12 +14,8 @@
 
     <repositories>
         <repository>
-            <id>javacord-repo</id>
-            <url>http://repo.bastian-oppermann.de/</url>
-        </repository>
-        <repository>
-            <id>sdcf4j-repo</id>
-            <url>http://repo.bastian-oppermann.de</url>
+            <id>jitpack.io</id>
+            <url>https://jitpack.io</url>
         </repository>
     </repositories>
 
@@ -66,10 +62,9 @@
 
     <dependencies>
         <dependency>
-            <groupId>de.btobastian.javacord</groupId>
-            <artifactId>javacord</artifactId>
-            <version>2.0.16</version>
-            <classifier>shaded</classifier>
+            <groupId>de.btobastian</groupId>
+            <artifactId>Javacord</artifactId>
+            <version>bf7d5f7</version>
         </dependency>
         <dependency>
             <groupId>org.jetbrains.kotlin</groupId>

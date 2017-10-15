@@ -2,15 +2,13 @@ package com.afg.tess.init
 
 import com.afg.tess.commands.AdminCommands
 import com.afg.tess.commands.api.CommandHandler
+import com.afg.tess.handlers.LocationHandler
 import com.afg.tess.handlers.PlayerHandler
-import com.afg.tess.handlers.ShipHandler
-import com.afg.tess.handlers.TravelHandler
+import com.afg.tess.handlers.ReactionHandler
+import com.afg.tess.handlers.ReactionResponseHandler
 import com.afg.tess.util.ISaveable
 import com.afg.tess.util.TessUtils
-import de.btobastian.javacord.entities.permissions.PermissionState
-import de.btobastian.javacord.entities.permissions.PermissionType
-import de.btobastian.javacord.listener.message.MessageCreateListener
-import java.util.*
+
 
 /**
  * Created by AFlyingGrayson on 9/7/17
@@ -19,59 +17,77 @@ class Main {
 
     companion object {
 
-        var lastMinute = 0
         @JvmStatic
         fun main() {
+            var lastSecond = 0
             //Connect to ARP Server Account
+
+
             Tess.api = PrivateTokens.getAPI()
-            Tess.api.connectBlocking()
 
             //Connect to Current Arc Account
 //            Tess.arcApi = PrivateTokens.getNAPI()
 //            Tess.arcApi.connectBlocking()
 
-            Tess.api.registerListener(MessageCreateListener { _, message -> if (message.channelReceiver != null && message.content.contains("make") && message.content.contains("a player") && TessUtils.isAdmin(message.author)) message.channelReceiver.server.members.forEach { m -> if (message.content.contains(m.id) && !PlayerHandler.players.any { it.playerID == m.id }) PlayerHandler.createPlayer(m, message) } })
-
-
-            //Register handler to listen for commands
-            Tess.api.registerListener(CommandHandler)
-
             //Load the saveable things
-            ISaveable.loadData(Tess.playerDataFolderPath, PlayerHandler.players)
-            ISaveable.loadData(Tess.locationFolderPath, TravelHandler.locations)
-            ISaveable.loadData(Tess.shipFolderPath, ShipHandler.ships)
+//            Skill.loadSkills()
+            ISaveable.loadData(Tess.playerDataFolderPath, PlayerHandler.players, true)
+            ISaveable.loadData(Tess.locationFolderPath, LocationHandler.locations, true)
 
             //Add all created commands to the handler
             CommandHandler.loadCommands(AdminCommands)
+            //            CommandHandler.loadCommands(PlayerCommands)
 
-            TravelHandler.updateChannels()
-//            CommandHandler.loadCommands(PlayerCommands)
-
-
-            while(true){
-                val minute = Calendar.getInstance().get(Calendar.MINUTE)
-                if(lastMinute != minute) {
-                    val permission = Tess.api.permissionsBuilder.setState(PermissionType.READ_MESSAGES, PermissionState.ALLOWED).build()
-                    val permission2 = Tess.api.permissionsBuilder.setState(PermissionType.READ_MESSAGES, PermissionState.DENIED).build()
-                    Tess.api.channels.forEach { c ->
-                        if (c.topic != null && c.topic.toLowerCase().contains("nearby")) {
-                            if(TravelHandler.locations.any { it.channelID == c.id }) {
-                                val location = TravelHandler.locations.first { it.channelID == c.id }
-                                if (PlayerHandler.players.any { it.location == location.uuid }) {
-                                    PlayerHandler.players.forEach { p ->
-                                        if (p.location == location.uuid)
-                                            c.updateOverwrittenPermissions(TessUtils.getMember(p), permission)
-                                        else c.updateOverwrittenPermissions(TessUtils.getMember(p), permission2)
-                                    }
-                                } else {
-                                    location.channelID = ""; location.saveData(); c.delete()
-                                }
-                            } else c.delete()
-                        }
-                    }
-                    lastMinute = minute
+            Tess.api.addMessageCreateListener({ t ->
+                val message = t.message
+                if (message.channel != null && message.content.contains("new player") && TessUtils.isAdmin(message.author.get())){
+                    val args = message.content.split(" ")
+                    PlayerHandler.createPlayer(message, args[2])
                 }
-            }
+            })
+            Tess.api.addMessageCreateListener(LocationHandler)
+            Tess.api.addReactionAddListener(ReactionResponseHandler)
+            Tess.api.addMessageCreateListener(CommandHandler)
+            Tess.api.addMessageEditListener(CommandHandler)
+
+            ReactionHandler.start()
+
+//            while (true) {
+//                val calendar = Calendar.getInstance()
+//                val minute = calendar.get(Calendar.MINUTE)
+//                val second = calendar.get(Calendar.SECOND)
+//                if (lastSecond != second) {
+//                    LocationHandler.locations.forEach { l ->
+//                        if (l.combat && l.combatSecond == second && l.nextCombatMinute == minute) l.nextCombatMinute++
+//                        else if(l.combat){
+//                            TessUtils.getPlayersInCombat(l).forEach { p ->
+//                                if (!ReactionResponseHandler.reactionMessageList.any { it is ReactionResponseHandler.CombatMenuMessage && it.player == p })
+//                                    ReactionResponseHandler.MainMenuMessage(p, l)
+//                            }
+//                            if(!TessUtils.getPlayersInCombat(l).any { p -> !ReactionResponseHandler.reactionMessageList.any { it is ReactionResponseHandler.CompletionMessage && it.player == p} }){
+//                                val order = TessUtils.getPlayersInCombat(l)
+////                                order.sortByDescending { it.stats.first { it.type == PlayerHandler.StatType.COORDINATION }.value }
+//                                val recaps = LinkedList<ReactionResponseHandler.Recap>()
+//                                order.forEach { p ->
+//                                    val c = ReactionResponseHandler.reactionMessageList.first { it is ReactionResponseHandler.CompletionMessage && it.player == p} as ReactionResponseHandler.CompletionMessage
+//                                    recaps.add(c.execute())
+//                                    c.removeFromList(TessUtils.server.channels.first { it.id.toString() == p.channelID }.asServerTextChannel().get().getMessageById(c.messageID).get())
+//                                }
+//                                order.forEach { p ->
+//                                    ReactionResponseHandler.RecapMessage(p, l, recaps)
+//                                }
+//                            }
+//                        } else {
+//                            PlayerHandler.players.filter { it.location == l.uuid }.forEach { p ->
+//                                p.combatLocationX = -1
+//                                p.combatLocationY = -1
+//                            }
+//                        }
+//                    }
+//                    lastSecond = second
+//                }
+//
+//            }
 
         }
 

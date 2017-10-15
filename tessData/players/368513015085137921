@@ -1,0 +1,13 @@
+recovering=false
+race=HUMAN
+combatLocationY=2
+health=10.0
+skills=[b3dbdffe-be53-4e17-a038-3cfafb15b59b, 0bfa28ee-42a8-4b33-9639-25ebe363c55a]
+playerClass=FIGHTER
+stats=[STRENGTH$5, COORDINATION$5, HEALTH$5, CHARM$5, INTELLIGENCE$5, MAGIC$5, LUCK$5]
+blocking=false
+combatLocationX=5
+location=e44227ad-96f5-4814-88d4-5cf1639ecd44
+channelID=368513015085137921
+party=astra
+rpName=Astra
