@@ -22,7 +22,7 @@ interface ISaveable {
             if(clear) list.clear()
             val dr = File(folderPath)
             dr.mkdirs()
-            val files = dr.listFiles()
+            val files = dr.listFiles().filter { it.isFile }
 
             files.forEach {
                 val data = HashMap<String, String>()
@@ -73,6 +73,15 @@ interface ISaveable {
         val printWriter = PrintWriter(fileWriter)
         data.forEach { k, v -> printWriter.println(k + "=" + v) }
         printWriter.close()
+    }
+
+    fun <T : ISaveable> delete(list: ArrayList<T>) {
+        list.remove(this)
+        val dir = File(getFolderPath())
+        dir.mkdirs()
+        val dataFile = File(dir, getFileName())
+        dataFile.createNewFile()
+        dataFile.delete()
     }
 
     fun getFolderPath(): String

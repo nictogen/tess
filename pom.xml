@@ -64,7 +64,7 @@
         <dependency>
             <groupId>de.btobastian</groupId>
             <artifactId>Javacord</artifactId>
-            <version>bf7d5f7</version>
+            <version>6dd48cb</version>
         </dependency>
         <dependency>
             <groupId>org.jetbrains.kotlin</groupId>

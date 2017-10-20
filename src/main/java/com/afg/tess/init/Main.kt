@@ -1,9 +1,10 @@
 package com.afg.tess.init
 
-import com.afg.tess.handlers.*
+import com.afg.tess.handlers.LocationHandler
+import com.afg.tess.handlers.ReactionHandler
+import com.afg.tess.handlers.ReactionResponseHandler
 import com.afg.tess.util.ISaveable
 import com.afg.tess.util.TessUtils
-import java.io.File
 
 
 /**
@@ -15,83 +16,62 @@ class Main {
 
         @JvmStatic
         fun main() {
+
             //Connect to Traveling Tess Account
             Tess.api = PrivateTokens.getAPI()
+
             //Load the saveable things
-            ISaveable.loadData(Tess.playerDataFolderPath, PlayerHandler.players, true)
-            ISaveable.loadData(Tess.locationFolderPath, LocationHandler.locations, true)
-            ISaveable.loadData(Tess.serverFolderPath, ServerHandler.serverList, true)
-
-
-            Tess.api.addServerJoinListener { l ->
-                if(!ServerHandler.serverList.any { it.id == l.server.id }) {
-                    val server = ServerHandler.Server()
-                    server.id = l.server.id
-                    val location = LocationHandler.Location()
-                    location.uuid = server.defaultLocation
-                    location.name = "Starting Point"
-                    location.unicodeEmoji = "\uD83C\uDF4B"
-                    location.saveData()
-                    LocationHandler.locations.add(location)
-                    ServerHandler.serverList.add(server)
-                    server.saveData()
+            Tess.api.servers.forEach {
+                ISaveable.loadData("tessData/${it.id}", LocationHandler.locations, false)
+                it.addServerChannelCreateListener { event ->
+                    if (event.channel.asServerTextChannel().isPresent) {
+                        val channel = event.channel.asServerTextChannel().get()
+                        if (channel.category.isPresent && LocationHandler.locations.any { it.channelID == channel.category.get().id }) {
+                            val location = LocationHandler.locations.first { it.channelID == channel.category.get().id }
+                            if (!location.nearby.contains(event.channel.name)) {
+                                location.nearby.add(event.channel.name)
+                                location.saveData()
+                            }
+                        }
+                    }
                 }
             }
 
-            Tess.api.addMessageCreateListener { t ->
-                val channel = t.message.serverTextChannel.get()
+            Tess.api.addMessageCreateListener { event ->
+                val channel = event.message.serverTextChannel.get()
                 val server = channel.server
-                if(!t.message.author.get().isBot && t.message.content.contains(Tess.api.yourself.mentionTag) || (Tess.api.yourself.getNickname(server).isPresent && t.message.content.contains(Tess.api.yourself.nicknameMentionTag))){
-                    val args = t.message.content.split(" ")
+                if (!event.message.author.get().isBot && event.message.content.contains(Tess.api.yourself.mentionTag) || (Tess.api.yourself.getNickname(server).isPresent && event.message.content.contains(Tess.api.yourself.nicknameMentionTag))) {
+                    val args = event.message.content.split(" ")
                     try {
-                        if (TessUtils.isPlayerChannel(channel.id, server)) {
-                            val player = TessUtils.getPlayer(channel.id, server.id)
-                            if (args.size == 1) {
-                                ReactionResponseHandler.TravelMessage(channel, LocationHandler.locations.first { it.uuid == player.location })
-                            } else if (TessUtils.isAdmin(t.message.author.get(), server)) {
-                                when {
-                                    args[1].toLowerCase().contains("new") -> {
-                                        val location = LocationHandler.createLocation(LocationHandler.locations.first { player.location == it.uuid }, args[2])
-                                        if (server.customEmojis.any { t.message.content.contains(it.mentionTag) }) {
-                                            location.customEmojiName = server.customEmojis.first { t.message.content.contains(it.mentionTag) }.name
-                                        } else {
-                                            location.unicodeEmoji = args[3]
-                                        }
-                                        location.saveData()
-                                    }
-                                    args[1].toLowerCase().contains("remove") -> {
-                                        val location = LocationHandler.locations.first { player.location == it.uuid }.nearbyLocations.first { it.name.toLowerCase() == args[2].toLowerCase() }
-                                        LocationHandler.locations.forEach {
-                                            it.nearby.removeAll(it.nearby.filter { it == location.uuid })
-                                        }
-                                        LocationHandler.locations.remove(location)
-                                        val dir = File(Tess.locationFolderPath)
-                                        dir.mkdirs()
-                                        val dataFile = File(dir, location.uuid)
-                                        dataFile.createNewFile()
-                                        dataFile.delete()
-                                    }
-                                    t.message.content.contains("greeting") -> {
-
+                        if (args.size == 1) {
+                            ReactionResponseHandler.TravelMessage(channel, event.message.author.get())
+                        } else if (TessUtils.isAdmin(event.message.author.get(), server)) {
+                            when {
+                                args[1].toLowerCase().contains("new") -> {
+                                    val s = event.message.content.substring(event.message.content.indexOf(args[2])).substring(3)
+                                    val location = LocationHandler.createLocation(s, event.message.serverTextChannel.get().server)
+                                    location.unicodeEmoji = args[2]
+                                    location.saveData()
+                                    try {
+                                        event.message.addReaction(location.unicodeEmoji).get()
+                                    } catch (e: Exception) {
+                                        location.delete(LocationHandler.locations)
                                     }
                                 }
                             }
                         }
-                    } catch (e : Exception){}
-                    t.message.delete()
+                    } catch (e: Exception) {
+                    }
+                    event.message.delete()
                 }
             }
+            Tess.api.addServerChannelDeleteListener { event ->
+                LocationHandler.locations.firstOrNull { event.channel.asChannelCategory().isPresent && it.channelID == event.channel.id }?.delete(LocationHandler.locations)
+                val l = LocationHandler.locations.firstOrNull { event.channel.asServerTextChannel().isPresent && event.channel.asServerTextChannel().get().category.isPresent && it.channelID == event.channel.asServerTextChannel().get().category.get().id }
+                l?.nearby?.remove(event.channel.name)
+                l?.saveData()
+            }
 
-            Tess.api.addMessageCreateListener({ t ->
-                val message = t.message
-                val server = t.message.channel.asServerTextChannel().get().server
-                if (message.channel != null && message.content.contains("new player") && TessUtils.isAdmin(message.author.get(), server)){
-                    val s = message.content.substring(message.content.indexOf("new player")).substring(11)
-                    PlayerHandler.createPlayer(message, s)
-                    t.message.delete()
-                }
-            })
-            Tess.api.addMessageCreateListener(LocationHandler)
             Tess.api.addReactionAddListener(ReactionResponseHandler)
             ReactionHandler.start()
         }
