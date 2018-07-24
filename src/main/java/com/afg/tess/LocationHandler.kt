@@ -1,11 +1,13 @@
 package com.afg.tess
 
 import com.afg.tess.commands.AdminCommands
-import de.btobastian.javacord.entities.Channel
-import de.btobastian.javacord.entities.User
-import de.btobastian.javacord.entities.message.Message
-import de.btobastian.javacord.entities.permissions.PermissionState
-import de.btobastian.javacord.entities.permissions.PermissionType
+import org.javacord.api.entity.channel.ServerTextChannel
+import org.javacord.api.entity.message.Message
+import org.javacord.api.entity.message.MessageAuthor
+import org.javacord.api.entity.permission.PermissionState
+import org.javacord.api.entity.permission.PermissionType
+import org.javacord.api.entity.permission.PermissionsBuilder
+import org.javacord.api.entity.user.User
 
 /**
  * Created by AFlyingGrayson on 9/9/17
@@ -16,8 +18,8 @@ object LocationHandler {
 
     fun loadLocations() {
         locationList.clear()
-        TessUtils.getServer()?.channels?.forEach {
-            if (it.topic != null) {
+        TessUtils.getServer().channels?.forEach {
+            if (it is ServerTextChannel && it.topic != null) {
                 if (it.topic.toLowerCase().contains("nearby")) {
                     locationList.add(Location(it))
                 }
@@ -26,7 +28,7 @@ object LocationHandler {
 
         locationList.forEach {
             it.nearbyLocations.clear()
-            val info = it.channel.topic.split(" ")
+            val info = it.channel.asServerTextChannel().get().topic.split(" ")
             info.forEach { i ->
                 val channel = getLocationFromName(i)
                 if (channel != null) it.nearbyLocations.add(channel)
@@ -147,21 +149,26 @@ object LocationHandler {
 
     fun lockAllOtherChannels(player: PlayerData.Player, user: User) {
         locationList.forEach {
-            val permission = Tess.api.permissionsBuilder.setState(PermissionType.READ_MESSAGES, PermissionState.ALLOWED).setState(PermissionType.SEND_MESSAGES, PermissionState.ALLOWED).build()
-            val permission2 = if(AdminCommands.admins.contains(player)) permission else Tess.api.permissionsBuilder.setState(PermissionType.READ_MESSAGES, PermissionState.DENIED).setState(PermissionType.SEND_MESSAGES, PermissionState.DENIED).build()
+            val permission =  PermissionsBuilder(it.channel.getOverwrittenPermissions(user)).setState(PermissionType.READ_MESSAGES, PermissionState.ALLOWED).setState(PermissionType.SEND_MESSAGES, PermissionState.ALLOWED).build()
+            val permission2 = if(AdminCommands.admins.contains(player)) permission else  PermissionsBuilder(it.channel.getOverwrittenPermissions(user)).setState(PermissionType.READ_MESSAGES, PermissionState.DENIED).setState(PermissionType.SEND_MESSAGES, PermissionState.DENIED).build()
             if (it.channel.name != "general" && it != getLocationFromName(player.location)) {
-                it.channel.updateOverwrittenPermissions(user, permission2)
+                it.channel.createUpdater().addPermissionOverwrite(user, permission2)
             } else {
-                it.channel.updateOverwrittenPermissions(user, permission)
+                it.channel.createUpdater().addPermissionOverwrite(user, permission)
             }
         }
         player.saveData()
     }
 
+    fun lockAllOtherChannels(player: PlayerData.Player, user: MessageAuthor) {
+        if(user.isUser)
+            lockAllOtherChannels(player, user.asUser().get())
+    }
+
     fun unlockAllChannels(player: PlayerData.Player, user: User) {
         locationList.forEach {
-            val permission = Tess.api.permissionsBuilder.setState(PermissionType.READ_MESSAGES, PermissionState.ALLOWED).setState(PermissionType.SEND_MESSAGES, PermissionState.ALLOWED).build()
-            it.channel.updateOverwrittenPermissions(user, permission)
+            val permission = PermissionsBuilder(it.channel.getOverwrittenPermissions(user)).setState(PermissionType.READ_MESSAGES, PermissionState.ALLOWED).setState(PermissionType.SEND_MESSAGES, PermissionState.ALLOWED).build()
+            it.channel.createUpdater().addPermissionOverwrite(user, permission)
         }
         player.saveData()
     }
@@ -178,7 +185,7 @@ object LocationHandler {
         return null
     }
 
-    class Location(val channel: Channel) {
+    class Location(val channel: ServerTextChannel) {
         val nearbyLocations = ArrayList<Location>()
         var combatZone = false
         var bar = false
@@ -187,4 +194,6 @@ object LocationHandler {
         var erobait = 0
         var market = false
     }
+
+
 }

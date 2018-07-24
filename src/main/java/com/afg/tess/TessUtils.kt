@@ -3,10 +3,12 @@ package com.afg.tess
 import com.afg.tess.combat.CombatHandler
 import com.afg.tess.combat.combats.Combat
 import com.afg.tess.combat.npcs.Ero
-import de.btobastian.javacord.entities.Channel
-import de.btobastian.javacord.entities.Server
-import de.btobastian.javacord.entities.User
-import de.btobastian.javacord.entities.message.Message
+import org.javacord.api.entity.channel.Channel
+import org.javacord.api.entity.channel.ServerTextChannel
+import org.javacord.api.entity.message.Message
+import org.javacord.api.entity.message.MessageAuthor
+import org.javacord.api.entity.server.Server
+import org.javacord.api.entity.user.User
 
 /**
  * Created by AFlyingGrayson on 9/3/17
@@ -15,12 +17,12 @@ object TessUtils {
 
     private val messageMap = HashMap<Channel, Message>()
 
-    fun sendMessage(channel: Channel, string: String) {
+    fun sendMessage(channel: ServerTextChannel, string: String) {
         if (messageMap.containsKey(channel)) {
             messageMap[channel]?.delete()
             messageMap.remove(channel)
         }
-        messageMap.put(channel, channel.sendMessage(string).get())
+        messageMap[channel] = channel.sendMessage(string).get()
     }
 
     fun getKey(s: String): String {
@@ -46,10 +48,14 @@ object TessUtils {
 
     fun getPlayer(mentionTag: String): PlayerData.Player? {
         PlayerData.players.forEach { player ->
-            if (player.playerID.length > 3)
-                if (mentionTag.contains(player.playerID.substring(3)))
+            if (mentionTag.contains(player.playerID.toString()))
                     return player
         }
+        return null
+    }
+
+    fun getPlayer(messageAuthor: MessageAuthor): PlayerData.Player? {
+        if(messageAuthor.isUser) return getPlayer(messageAuthor.asUser().get().mentionTag)
         return null
     }
 
@@ -57,19 +63,19 @@ object TessUtils {
         return Tess.api.servers.elementAt(0)
     }
 
-    fun getChannelFromName(name: String): Channel? {
+    fun getChannelFromName(name: String): ServerTextChannel? {
         val server = getServer()
-        server?.channels?.forEach {
-            if (name == it.name)
+        server.channels?.forEach {
+            if (it is ServerTextChannel && name == it.name)
                 return it
         }
         return null
     }
 
-    fun getLocation(player: PlayerData.Player): Channel? {
+    fun getLocation(player: PlayerData.Player): ServerTextChannel? {
         val server = getServer()
-        server?.channels?.forEach {
-            if (it.name == player.location)
+        server.channels?.forEach {
+            if (it is ServerTextChannel && it.name == player.location)
                 return it
         }
         return null
@@ -120,7 +126,7 @@ object TessUtils {
     }
 
     fun isAdmin(user: User): Boolean {
-        return user.id.contains("150541854029381632") || user.id.contains("161882538514579466") || user.id.contains("332739616505462784")
+        return user.id == 150541854029381632 || user.id == 161882538514579466 || user.id == 332739616505462784
     }
 
     fun isArcLeader(user: User) : Boolean {
@@ -129,20 +135,24 @@ object TessUtils {
     }
 
     fun isModerator(user: User): Boolean {
-        return isAdmin(user) || user.id.contains("136936819060244480")
+        return isAdmin(user)
     }
 
     fun getMember(player : PlayerData.Player): User? {
-        getServer().members?.forEach { member -> if (player.playerID.contains(member.id)) return member }
+        getServer().members?.forEach { member -> if (player.playerID == member.id) return member }
         return null
     }
-
-
 }
 
-val User.rpName : String
-    get() = if (TessUtils.getServer().getNickname(this) != null) TessUtils.getServer().getNickname(this) else this.name
+val MessageAuthor.rpName : String
+    get() = if (this.isUser && TessUtils.getServer().getNickname(this.asUser().get()).isPresent) TessUtils.getServer().getNickname(this.asUser().get()).get() else this.name
 
+val User.rpName : String
+    get() = if (TessUtils.getServer().getNickname(this).isPresent) TessUtils.getServer().getNickname(this).get() else this.name
 
 val PlayerData.Player.rpName : String
     get() = if(TessUtils.getMember(this) != null) TessUtils.getMember(this)!!.rpName else this.name
+
+fun Message.reply(string : String) {
+    this.channel.sendMessage(string)
+}

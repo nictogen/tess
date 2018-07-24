@@ -1,6 +1,6 @@
 package com.afg.tess;
 
-import de.btobastian.javacord.DiscordAPI;
+import org.javacord.api.DiscordApi;
 
 import java.util.Random;
 
@@ -10,12 +10,14 @@ import java.util.Random;
 public class Tess
 {
 	public static Random rand = new Random();
-	public static DiscordAPI api;
+	public static DiscordApi api;
 	public static String playerDataFolderPath = "tessData/arp/players";
 	public static String factionDataFolderPath = "tessData/arp/factions";
 	public static String factionListFilePath = "tessData/arp/factionList";
 	public static String playerListFilePath = "tessData/arp/playerList";
 
-	public static void main(String[] args) { Main.main(); }
-
+	public static void main(String[] args)
+	{
+		Main.main(PrivateTokens.INSTANCE.getAPI());
+	}
 }

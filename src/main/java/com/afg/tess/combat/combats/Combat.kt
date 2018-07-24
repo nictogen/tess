@@ -7,15 +7,14 @@ import com.afg.tess.combat.moves.Move
 import com.afg.tess.combat.npcs.Ero
 import com.afg.tess.combat.npcs.Guard
 import com.afg.tess.rpName
-import de.btobastian.javacord.entities.Channel
-import de.btobastian.javacord.entities.User
-import de.btobastian.javacord.entities.message.Message
+import org.javacord.api.entity.channel.ServerTextChannel
+import org.javacord.api.entity.user.User
 import java.util.*
 
 /**
  * Created by AFlyingGrayson on 9/13/17
  */
-abstract class Combat(var location: Channel) {
+abstract class Combat(var location: ServerTextChannel) {
     val participants = LinkedList<CombatHandler.CombatParticipant>()
     val fleeingParticipants = ArrayList<CombatHandler.CombatParticipant>()
     var maxPlayers = 3

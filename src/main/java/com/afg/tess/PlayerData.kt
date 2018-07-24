@@ -1,8 +1,8 @@
 package com.afg.tess
 
 import com.afg.tess.combat.moves.Move
-import de.btobastian.javacord.entities.User
-import de.btobastian.javacord.entities.message.Message
+import org.javacord.api.entity.message.Message
+import org.javacord.api.entity.user.User
 import java.io.File
 import java.io.FileWriter
 import java.io.PrintWriter
@@ -52,7 +52,7 @@ object PlayerData {
             scanner = Scanner(playerDataFile)
             while (scanner.hasNextLine()){
                 val s = scanner.nextLine()
-                playerData.put(TessUtils.getKey(s), TessUtils.getValue(s))
+                playerData[TessUtils.getKey(s)] = TessUtils.getValue(s)
             }
 
             val player = Player()
@@ -63,7 +63,7 @@ object PlayerData {
 
     fun createPlayer(member: User, message: Message){
         players.forEach { player ->
-            if(player.playerID == member.mentionTag){
+            if(member.mentionTag.contains(player.playerID.toString())){
                 message.reply(member.name + " is already a player.")
                 return
             }
@@ -91,11 +91,11 @@ object PlayerData {
     class Player {
         var name = ""
         var money = 0.0
-        var playerID = ""
+        var playerID : Long = 0
         var backpackSize = 10
         val items = ArrayList<ItemStack>()
         val moves = ArrayList<Move>()
-        val contacts = LinkedList<String>()
+        val contacts = LinkedList<Long>()
         var location = ""
 
         var maxHealth = 1
@@ -119,7 +119,7 @@ object PlayerData {
 
         fun loadData(data : HashMap<String, String>){
             if(data["money"] != null)           money = data["money"]!!.toDouble()
-            if(data["playerID"] != null)        playerID =  data["playerID"]!!
+            if(data["playerID"] != null)        playerID =  data["playerID"]!!.toLong()
             if(data["name"] != null)            name = data["name"]!!
             if(data["backpackSize"] != null)    backpackSize = Integer.parseInt(data["backpackSize"])
             if(data["strength"] != null)        strength = Integer.parseInt(data["strength"])
@@ -138,7 +138,7 @@ object PlayerData {
             if(data["arcleader"] != null)       arcleader = Integer.parseInt(data["arcleader"])
             if(data["income"] != null)          income = Integer.parseInt(data["income"])
             contacts.clear()
-            if(data["contacts"] != null){ data["contacts"]?.split("$")?.forEach { contacts.add(it) } }
+            if(data["contacts"] != null){ data["contacts"]?.split("$")?.forEach { if(it.isNotEmpty()) contacts.add(it.toLong()) } }
             items.clear()
             (0..backpackSize)
                     .filter { data["item$it"] != null }
@@ -153,76 +153,76 @@ object PlayerData {
 
         fun saveData() {
             val data = HashMap<String, String>()
-            data.put("money", money.toString())
-            data.put("playerID", playerID)
-            data.put("name", name)
-            data.put("backpackSize", backpackSize.toString())
-            data.put("strength", strength.toString())
-            data.put("speed", speed.toString())
-            data.put("health", health.toString())
-            data.put("intelligence", intelligence.toString())
-            data.put("power", power.toString())
-            data.put("maxHealth", maxHealth.toString())
-            data.put("accuracy", accuracy.toString())
-            data.put("defense", defense.toString())
-            data.put("canScan", canScan.toString())
-            data.put("location", location)
-            data.put("race", race.name)
-            data.put("bartender", bartender.toString())
-            data.put("drunkness", drunkness.toString())
-            data.put("arcleader", arcleader.toString())
-            data.put("income", income.toString())
+            data["money"] = money.toString()
+            data["playerID"] = playerID.toString()
+            data["name"] = name
+            data["backpackSize"] = backpackSize.toString()
+            data["strength"] = strength.toString()
+            data["speed"] = speed.toString()
+            data["health"] = health.toString()
+            data["intelligence"] = intelligence.toString()
+            data["power"] = power.toString()
+            data["maxHealth"] = maxHealth.toString()
+            data["accuracy"] = accuracy.toString()
+            data["defense"] = defense.toString()
+            data["canScan"] = canScan.toString()
+            data["location"] = location
+            data["race"] = race.name
+            data["bartender"] = bartender.toString()
+            data["drunkness"] = drunkness.toString()
+            data["arcleader"] = arcleader.toString()
+            data["income"] = income.toString()
             var id = 0
-            items.forEach { data.put("item${id++}", it.saveData()) }
+            items.forEach { data["item${id++}"] = it.saveData() }
             id = 0
-            moves.forEach { data.put("move${id++}", it.saveData()) }
+            moves.forEach { data["move${id++}"] = it.saveData() }
             var contactList = ""
             contacts.forEach {
                 contactList += "$it$"
             }
-            data.put("contacts", contactList)
+            data["contacts"] = contactList
             val dr = File(Tess.playerDataFolderPath)
             dr.mkdirs()
             val playerDataFile = File(dr, name)
             playerDataFile.createNewFile()
             val fileWriter = FileWriter(playerDataFile)
             val printWriter = PrintWriter(fileWriter)
-            data.forEach { k, v ->  printWriter.println(k + "=" + v)}
+            data.forEach { k, v ->  printWriter.println("$k=$v")}
             printWriter.close()
         }
 
         fun backupData(){
             val data = HashMap<String, String>()
-            data.put("money", money.toString())
-            data.put("playerID", playerID)
-            data.put("name", name)
-            data.put("backpackSize", backpackSize.toString())
-            data.put("strength", strength.toString())
-            data.put("speed", speed.toString())
-            data.put("health", health.toString())
-            data.put("intelligence", intelligence.toString())
-            data.put("power", power.toString())
-            data.put("maxHealth", maxHealth.toString())
-            data.put("accuracy", accuracy.toString())
-            data.put("defense", defense.toString())
-            data.put("canScan", canScan.toString())
-            data.put("location", location)
-            data.put("race", race.name)
-            data.put("bartender", bartender.toString())
-            data.put("drunkness", drunkness.toString())
-            data.put("arcleader", arcleader.toString())
-            data.put("income", income.toString())
+            data["money"] = money.toString()
+            data["playerID"] = playerID.toString()
+            data["name"] = name
+            data["backpackSize"] = backpackSize.toString()
+            data["strength"] = strength.toString()
+            data["speed"] = speed.toString()
+            data["health"] = health.toString()
+            data["intelligence"] = intelligence.toString()
+            data["power"] = power.toString()
+            data["maxHealth"] = maxHealth.toString()
+            data["accuracy"] = accuracy.toString()
+            data["defense"] = defense.toString()
+            data["canScan"] = canScan.toString()
+            data["location"] = location
+            data["race"] = race.name
+            data["bartender"] = bartender.toString()
+            data["drunkness"] = drunkness.toString()
+            data["arcleader"] = arcleader.toString()
+            data["income"] = income.toString()
             var id = 0
-            items.forEach { data.put("item${id++}", it.saveData()) }
+            items.forEach { data["item${id++}"] = it.saveData() }
             id = 0
-            moves.forEach { data.put("move${id++}", it.saveData()) }
+            moves.forEach { data["move${id++}"] = it.saveData() }
             val dr = File(Tess.playerDataFolderPath)
             dr.mkdirs()
             val playerDataFile = File(dr, "${name}_backup")
             playerDataFile.createNewFile()
             val fileWriter = FileWriter(playerDataFile)
             val printWriter = PrintWriter(fileWriter)
-            data.forEach { k, v ->  printWriter.println(k + "=" + v)}
+            data.forEach { k, v ->  printWriter.println("$k=$v")}
             printWriter.close()
         }
 

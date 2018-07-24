@@ -5,13 +5,13 @@ import com.afg.tess.combat.CombatHandler
 import com.afg.tess.combat.npcs.Ero
 import com.afg.tess.combat.npcs.Guard
 import com.afg.tess.rpName
-import de.btobastian.javacord.entities.Channel
-import de.btobastian.javacord.entities.User
+import org.javacord.api.entity.channel.ServerTextChannel
+import org.javacord.api.entity.user.User
 
 /**
  * Created by AFlyingGrayson on 9/13/17
  */
-class PvpCombat(location : Channel) : Combat(location) {
+class PvpCombat(location : ServerTextChannel) : Combat(location) {
     init {
         maxPlayers = 2
     }

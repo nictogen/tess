@@ -1,9 +1,10 @@
 package com.afg.tess
 
 import com.afg.tess.combat.CombatHandler
+import com.afg.tess.combat.combats.Combat
 import com.afg.tess.combat.combats.ZoneCombat
-import de.btobastian.javacord.entities.UserStatus
-import de.btobastian.javacord.entities.message.Message
+import org.javacord.api.entity.message.Message
+import org.javacord.api.entity.user.UserStatus
 import java.io.File
 import java.io.FileWriter
 import java.io.PrintWriter
@@ -30,25 +31,25 @@ object Factions {
 
         fun saveData() {
             val data = HashMap<String, String>()
-            data.put("name", name)
-            data.put("adminName", adminName)
-            data.put("gruntName", gruntName)
+            data["name"] = name
+            data["adminName"] = adminName
+            data["gruntName"] = gruntName
             var factionString = ""
             grunts.forEach {
-                factionString += it.playerID + ","
+                factionString += it.playerID.toString() + ","
             }
-            data.put("grunts", factionString)
+            data["grunts"] = factionString
 
             factionString = ""
             admins.forEach {
-                factionString += it.playerID + ","
+                factionString += it.playerID.toString() + ","
             }
-            data.put("admins", factionString)
+            data["admins"] = factionString
 
             controlledLocations.forEach { l, g ->
                 var s = ""
                 g.forEach { s += it.saveData() + "," }
-                data.put(l.channel.name, s)
+                data[l.channel.name] = s
             }
 
             val dr = File(Tess.factionDataFolderPath)
@@ -96,7 +97,7 @@ object Factions {
                             guards.add(Guard(LocationHandler.getLocationFromName(s[0])!!, s[1], Integer.parseInt(s[2]), Integer.parseInt(s[3])))
                         }
                     } catch (e: Exception) { }
-                    controlledLocations.put(it, guards)
+                    controlledLocations[it] = guards
                 }
             }
         }
@@ -126,7 +127,7 @@ object Factions {
             scanner = Scanner(factionDataFile)
             while (scanner.hasNextLine()) {
                 val s = scanner.nextLine()
-                factionData.put(TessUtils.getKey(s), TessUtils.getValue(s))
+                factionData[TessUtils.getKey(s)] = TessUtils.getValue(s)
             }
             val faction = Faction()
             faction.loadData(factionData)
@@ -145,7 +146,7 @@ object Factions {
     fun attackControlledLocation(location: LocationHandler.Location, attacker: PlayerData.Player, message: Message) : Boolean {
         val faction = TessUtils.getClaimingFaction(location)
         val guards = faction!!.controlledLocations[location]
-        var combat = TessUtils.getCombat(location.channel)
+        var combat : Combat? = TessUtils.getCombat(location.channel)
         val attackingUser = TessUtils.getMember(attacker)
         if(attackingUser != null) {
             if(TessUtils.getCombat(attacker) != null){

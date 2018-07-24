@@ -3,12 +3,12 @@ package com.afg.tess.combat.combats
 import com.afg.tess.*
 import com.afg.tess.combat.CombatHandler
 import com.afg.tess.combat.npcs.Ero
-import de.btobastian.javacord.entities.Channel
+import org.javacord.api.entity.channel.ServerTextChannel
 
 /**
  * Created by AFlyingGrayson on 9/13/17
  */
-class EroCombat(location: Channel) : Combat(location) {
+class EroCombat(location: ServerTextChannel) : Combat(location) {
 
     override fun fleeBehavior() {
         fleeingParticipants.forEach {

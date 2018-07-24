@@ -42,7 +42,7 @@ object PlayerCommands {
     @Command(aliases = arrayOf("!playerinfo", "!p"))
     fun onPlayerInfo(info: CommandHandler.MessageInfo): String {
 
-        if (!info.message.isPrivateMessage && (info.message.channelReceiver != null && !info.message.channelReceiver.name.contains("spam")))
+        if (!info.message.isPrivate && (info.message.channel.asServerTextChannel().isPresent && !info.message.channel.asServerTextChannel().get().name.contains("spam")))
             return ""
 
         var string = "#${info.player.rpName} Player Info:\n"
@@ -164,7 +164,7 @@ object PlayerCommands {
                     } else {
                         var contacts = "```md\n"
                         var id = 1
-                        player.contacts.forEach { contacts += "${id++}: <${TessUtils.getPlayer(it)?.rpName}>\n" }
+                        player.contacts.forEach { contacts += "${id++}: <${TessUtils.getPlayer(it.toString())?.rpName}>\n" }
                         return "$contacts```"
                     }
                 } else defaultErrorMessage
@@ -265,12 +265,12 @@ object PlayerCommands {
                 val stats = HashMap<PlayerData.Stat, Int>()
                 var highestStat = PlayerData.Stat.STRENGTH
                 var highestStatValue = 0
-                stats.put(PlayerData.Stat.STRENGTH, player2.strength)
-                stats.put(PlayerData.Stat.INTELLIGENCE, player2.intelligence)
-                stats.put(PlayerData.Stat.POWER, player2.power)
-                stats.put(PlayerData.Stat.SPEED, player2.speed)
-                stats.put(PlayerData.Stat.ACCURACY, player2.accuracy)
-                stats.put(PlayerData.Stat.DEFENSE, player2.defense)
+                stats[PlayerData.Stat.STRENGTH] = player2.strength
+                stats[PlayerData.Stat.INTELLIGENCE] = player2.intelligence
+                stats[PlayerData.Stat.POWER] = player2.power
+                stats[PlayerData.Stat.SPEED] = player2.speed
+                stats[PlayerData.Stat.ACCURACY] = player2.accuracy
+                stats[PlayerData.Stat.DEFENSE] = player2.defense
                 stats.forEach { t, u ->
                     if (u > highestStatValue) {
                         highestStatValue = u
@@ -280,7 +280,7 @@ object PlayerCommands {
                 scan += "\nThey seem to specialize in ${highestStat.name.toLowerCase()}, at $highestStatValue."
                 val healthy = player2.health >= player2.maxHealth / 2.0
                 scan += if (healthy) "\n They appear to be healthy" else "\nThey appear to be wounded."
-                info.user.sendMessage(scan + "```")
+                info.user.sendMessage("$scan```")
                 ""
             } else "You can't scan."
         } else "You can't scan a player that isn't in the same place as you!"
@@ -491,7 +491,7 @@ object PlayerCommands {
         val faction = TessUtils.getFaction(info.player)
         val claimingFaction = TessUtils.getClaimingFaction(location)
         return if (claimingFaction == null) {
-            faction.controlledLocations.put(location, ArrayList())
+            faction.controlledLocations[location] = ArrayList()
             faction.saveData()
             "Claimed location for ${faction.name}."
         } else "Another faction already controls this location."
@@ -518,7 +518,7 @@ object PlayerCommands {
     @Command(aliases = arrayOf("!text"))
     fun onText(info: CommandHandler.MessageInfo, contactNumber: Int): String {
         return if (info.player.items.any { it.itemType.type == ItemType.PHONE }) {
-            val player2 = TessUtils.getPlayer(info.player.contacts[contactNumber - 1])!!
+            val player2 = TessUtils.getPlayer(info.player.contacts[contactNumber - 1].toString())!!
             if (player2.items.any { it.itemType.type == ItemType.PHONE }) {
                 var messageContent = ""
                 info.message.content.split(" ").subList(2, info.message.content.split(" ").size).forEach { messageContent += "$it " }

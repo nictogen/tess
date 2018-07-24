@@ -8,7 +8,8 @@ import com.afg.tess.combat.combats.Combat
 import com.afg.tess.combat.combats.EroCombat
 import com.afg.tess.combat.moves.BasicDamageMove
 import com.afg.tess.combat.moves.Move
-import de.btobastian.javacord.entities.message.Message
+import com.afg.tess.reply
+import org.javacord.api.entity.message.Message
 
 /**
  * Created by AFlyingGrayson on 9/8/17

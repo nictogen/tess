@@ -5,7 +5,7 @@ import com.afg.tess.combat.moves.NothingMove
 import com.afg.tess.commands.AdminCommands
 import com.afg.tess.commands.PlayerCommands
 import com.afg.tess.commands.api.CommandHandler
-import de.btobastian.javacord.listener.message.MessageCreateListener
+import org.javacord.api.DiscordApi
 import java.util.*
 
 /**
@@ -16,12 +16,11 @@ class Main {
     companion object {
 
         @JvmStatic
-        fun main() {
-            Tess.api = PrivateTokens.getAPI()
-            Tess.api.connectBlocking()
-            Tess.api.registerListener(MessageCreateListener { _, message -> if (message.channelReceiver != null && message.content.contains("make") && message.content.contains("a player")) message.channelReceiver.server.members.forEach { if (message.content.contains(it.id)) PlayerData.createPlayer(it, message) } })
-            Tess.api.registerListener(AlcoholHandler)
-            Tess.api.registerListener(CommandHandler)
+        fun main(api: DiscordApi) {
+            Tess.api = api
+            api.addMessageCreateListener({ event -> if (event.message.serverTextChannel.isPresent && event.message.content.contains("make") && event.message.content.contains("a player")) event.message.serverTextChannel.get().server.members.forEach { if (event.message.content.contains(it.id.toString())) PlayerData.createPlayer(it, event.message) } })
+            api.addMessageCreateListener(AlcoholHandler)
+            api.addMessageCreateListener(CommandHandler)
             CommandHandler.loadCommands(AdminCommands)
             CommandHandler.loadCommands(PlayerCommands)
             PlayerData.loadData()

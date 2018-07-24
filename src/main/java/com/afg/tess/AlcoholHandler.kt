@@ -1,21 +1,21 @@
 package com.afg.tess
 
 import com.afg.tess.combat.CombatHandler
-import de.btobastian.javacord.DiscordAPI
-import de.btobastian.javacord.entities.message.Message
-import de.btobastian.javacord.listener.message.MessageCreateListener
+import org.javacord.api.event.message.MessageCreateEvent
+import org.javacord.api.listener.message.MessageCreateListener
 
 /**
  * Created by AFlyingGrayson on 9/15/17
  */
-object AlcoholHandler : MessageCreateListener{
+object AlcoholHandler : MessageCreateListener {
 
-    override fun onMessageCreate(p0: DiscordAPI?, message: Message) {
-        val player = TessUtils.getPlayer(message.author.mentionTag)
+    override fun onMessageCreate(p0: MessageCreateEvent) {
+        val message = p0.message
+        val player = TessUtils.getPlayer(message.author.asUser().get().mentionTag)
 
         if(player != null){
             val location = TessUtils.getLocation(player)
-            if(message.channelReceiver == location && message.content.isNotEmpty() && message.content[0] != '!' && message.content[0] != '['){
+            if(message.channel == location && message.content.isNotEmpty() && message.content[0] != '!' && message.content[0] != '['){
                 when(player.drunkness){
                     in 20..30 -> {
                         if(Tess.rand.nextInt(10) <= 2){

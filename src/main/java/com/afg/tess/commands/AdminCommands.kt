@@ -316,7 +316,7 @@ object AdminCommands {
     @Command(aliases = arrayOf("!endcombat", "!ec"))
     fun onEndCombat(info: CommandHandler.MessageInfo): String {
         return if (TessUtils.isAdmin(info.user)) {
-            CombatHandler.combatList.remove(TessUtils.getCombat(info.message.channelReceiver))
+            CombatHandler.combatList.remove(TessUtils.getCombat(info.message.channel))
             "Ended Combat"
         } else "You are not an admin."
     }
